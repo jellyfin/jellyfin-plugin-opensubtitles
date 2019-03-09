@@ -1,38 +1,25 @@
 <!DOCTYPE html>
-
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8" />
-    <title>ExamplePlugin Configuration</title>
+    <title>Open Subtitles</title>
 </head>
 <body>
         <div id="ExamplePluginConfigurationPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox">
             <div data-role="content">
                 <div class="content-primary">
-
                     <form id="ExamplePluginConfigurationForm">
-                        <div class="selectContainer">
-                            <label class="selectLabel" for="Options">Options:</label>
-                            <select is="emby-select" id="Options" name="Options" class="emby-select-withcolor emby-select">
-                                <option id="optOneOption" value="OneOption">One Option</option>
-                                <option id="optAnotherOption" value="AnotherOption">AnotherOption</option>
-                            </select>
+                        <div class="inputContainer">
+                            <label class="inputeLabel inputLabelUnfocused" for="username">Username</label>
+                            <input id="username" name="username" type="text" is="emby-input" />
+                            <div class="fieldDescription">
+                                <a is="emby-linkbutton" class="button-link emby-button" target="_blank" href="http://www.opensubtitles.org/">Register</a>
+                            </div>
                         </div>
                         <div class="inputContainer">
-                            <label class="inputeLabel inputLabelUnfocused" for="AnInteger">An Integer:</label>
-                            <input id="AnInteger" name="AnInteger" type="number" is="emby-input" min="0"/>
-                            <div class="fieldDescription">Numbers go here</div>
-                        </div>
-                        <div class="checkboxContainer checkboxContainer-withDescripton">
-                            <label class="emby-checkbox-label">
-                                <input id="TrueFalseSetting" name="TrueFalseCheckBox" type="checkbox" is="emby-checkbox"/>
-                                <span>True or False</span>
-                            </label>
-                        </div>
-                        <div class="inputContainer">
-                            <label class="inputeLabel inputLabelUnfocused" for="AString">A String:</label>
-                            <input id="AString" name="AString" type="text" is="emby-input" />
-                            <div class="fieldDescription">Words go here</div>
+                            <label class="inputeLabel inputLabelUnfocused" for="password">Password</label>
+                            <input id="password" name="password" type="password" is="emby-input" />
+                            <div class="fieldDescription">You can utilize this plugin by editing a library and selecting the Open Subtitles provider.</div>
                         </div>
                         <div>
                             <button is="emby-button" type="submit" class="raised button-submit block emby-button">
@@ -42,46 +29,29 @@
                     </form>
                 </div>
             </div>
-
             <script type="text/javascript">
-                var ExamplePluginConfigurationPage =
-                {
+                var ExamplePluginConfigurationPage = {
                     pluginUniqueId: "eb5d7894-8eef-4b36-aa6f-5d124e828ce1",
-
-                    virtualFolders: [],
-                    physicalFolders: [],
-
                     loadConfiguration: function() {
                         Dashboard.showLoadingMsg();
-
                         ApiClient.getPluginConfiguration(ExamplePluginConfigurationPage.pluginUniqueId).then(function (config) {
                             var page = $.mobile.activePage;
-
-                            $('#Options', page).val(config.Options).change();
-                            $('#AnInteger', page).val(config.AnInteger).change();
-                            $('#TrueFalseSetting', page).checked(config.TrueFalseSetting).checkboxradio("refresh");
-                            $('#AString', page).val(config.AString).change();
-
+                            $('#username', page).val(config.Username).change();
+                            $('#password', page).val(config.Password).change();
                             Dashboard.hideLoadingMsg();
                         });
                     },
-
                     saveConfiguration: function() {
                         Dashboard.showLoadingMsg();
-
                         var page = $.mobile.activePage;
-
                         ApiClient.getPluginConfiguration(ExamplePluginConfigurationPage.pluginUniqueId).then(function(config) {
-
-                            config.Options = $('#Options', page).val();
-                            config.AnInteger = $('#AnInteger').val();
-                            config.TrueFalseSetting = $('#TrueFalseSetting').prop('checked');
-                            config.AString = $('#AString').val();
+                            config.Username = $('#username').val();
+                            config.Password = $('#password').val();
                             ApiClient.updatePluginConfiguration(ExamplePluginConfigurationPage.pluginUniqueId, config).then(function (result) {
                                 Dashboard.processPluginConfigurationUpdateResult(result);
                             });
                         });
-                    },
+                    }
                 };
 
                 $('#ExamplePluginConfigurationPage').on('pageshow', function () {
@@ -94,5 +64,5 @@
                 });
             </script>
         </div>
-    </body>
-    </html>
+</body>
+</html>

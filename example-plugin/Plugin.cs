@@ -1,17 +1,16 @@
 using System;
 using System.Collections.Generic;
-using Jellyfin.Plugin.ExamplePlugin.Configuration;
+using Jellyfin.Plugin.OpenSubtitles.Configuration;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Serialization;
 
-namespace Jellyfin.Plugin.ExamplePlugin
+namespace Jellyfin.Plugin.OpenSubtitles
 {
-    public class Plugin : BasePlugin<PluginConfiguration>,
-    IHasWebPages
+    public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
-        public override string Name => "ExamplePlugin";
+        public override string Name => "Open Subtitles";
         public override Guid Id => Guid.Parse("eb5d7894-8eef-4b36-aa6f-5d124e828ce1");
         public Plugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer) : base(applicationPaths, xmlSerializer)
         {
