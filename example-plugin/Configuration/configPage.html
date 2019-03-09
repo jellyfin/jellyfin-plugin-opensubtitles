@@ -5,10 +5,10 @@
     <title>Open Subtitles</title>
 </head>
 <body>
-    <div id="ExamplePluginConfigurationPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox">
+    <div id="OpenSubtitlesConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox">
         <div data-role="content">
             <div class="content-primary">
-                <form id="ExamplePluginConfigurationForm">
+                <form id="OpenSubtitlesConfigForm">
                     <div class="inputContainer">
                         <label class="inputeLabel inputLabelUnfocused" for="username">Username</label>
                         <input id="username" name="username" type="text" is="emby-input" />
@@ -30,36 +30,28 @@
             </div>
         </div>
         <script type="text/javascript">
-            var ExamplePluginConfigurationPage = {
-                pluginUniqueId: "eb5d7894-8eef-4b36-aa6f-5d124e828ce1",
-                loadConfiguration: function() {
-                    Dashboard.showLoadingMsg();
-                    ApiClient.getPluginConfiguration(ExamplePluginConfigurationPage.pluginUniqueId).then(function (config) {
-                        var page = $.mobile.activePage;
-                        $('#username', page).val(config.Username).change();
-                        $('#password', page).val(config.Password).change();
-                        Dashboard.hideLoadingMsg();
-                    });
-                },
-                saveConfiguration: function() {
-                    Dashboard.showLoadingMsg();
-                    var page = $.mobile.activePage;
-                    ApiClient.getPluginConfiguration(ExamplePluginConfigurationPage.pluginUniqueId).then(function(config) {
-                        config.Username = $('#username').val();
-                        config.Password = $('#password').val();
-                        ApiClient.updatePluginConfiguration(ExamplePluginConfigurationPage.pluginUniqueId, config).then(function (result) {
-                            Dashboard.processPluginConfigurationUpdateResult(result);
-                        });
-                    });
-                }
+            var OpenSubtitlesConfig = {
+                pluginUniqueId: "eb5d7894-8eef-4b36-aa6f-5d124e828ce1"
             };
 
-            $('#ExamplePluginConfigurationPage').on('pageshow', function () {
-                ExamplePluginConfigurationPage.loadConfiguration();
+            $('#OpenSubtitlesConfigPage').on('pageshow', function () {
+                Dashboard.showLoadingMsg();
+                ApiClient.getPluginConfiguration(OpenSubtitlesConfig.pluginUniqueId).then(function (config) {
+                    $('#username').val(config.Username).change();
+                    $('#password').val(config.Password).change();
+                    Dashboard.hideLoadingMsg();
+                });
             });
 
-            $('#ExamplePluginConfigurationForm').on('submit', function () {
-                ExamplePluginConfigurationPage.saveConfiguration();
+            $('#OpenSubtitlesConfigPage').on('submit', function () {
+                Dashboard.showLoadingMsg();
+                ApiClient.getPluginConfiguration(OpenSubtitlesConfig.pluginUniqueId).then(function (config) {
+                    config.Username = $('#username').val();
+                    config.Password = $('#password').val();
+                    ApiClient.updatePluginConfiguration(OpenSubtitlesConfig.pluginUniqueId, config).then(function (result) {
+                        Dashboard.processPluginConfigurationUpdateResult(result);
+                    });
+                });
                 return false;
             });
         </script>
