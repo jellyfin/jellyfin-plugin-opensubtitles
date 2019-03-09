@@ -11,7 +11,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
     public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
         public override string Name => "Open Subtitles";
-        public override Guid Id => Guid.Parse("eb5d7894-8eef-4b36-aa6f-5d124e828ce1");
+        public override Guid Id => Guid.Parse("4b9ed42f-5185-48b5-9803-6ff2989014c4");
         public Plugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer) : base(applicationPaths, xmlSerializer)
         {
             Instance = this;
