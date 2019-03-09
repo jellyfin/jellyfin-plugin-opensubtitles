@@ -26,7 +26,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 new PluginPageInfo
                 {
                     Name = this.Name,
-                    EmbeddedResourcePath = string.Format("Jellyfin.Plugin.{0}.Configuration.configPage.html",this.Name)
+                    EmbeddedResourcePath = string.Format("Jellyfin.Plugin.{0}.Configuration.configPage.html", this.Name)
                 }
             };
         }
