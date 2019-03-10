@@ -19,7 +19,7 @@
                     <div class="inputContainer">
                         <label class="inputeLabel inputLabelUnfocused" for="password">Password</label>
                         <input id="password" name="password" type="password" is="emby-input" />
-                        <div class="fieldDescription">You can utilize this plugin by editing a library and selecting the Open Subtitles provider.</div>
+                        <div class="fieldDescription">You can utilize this plugin by editing a library and modifying the options for subtitle downloads.</div>
                     </div>
                     <div>
                         <button is="emby-button" type="submit" class="raised button-submit block emby-button">
@@ -43,7 +43,7 @@
                 });
             });
 
-            $('#OpenSubtitlesConfigPage').on('submit', function () {
+            $('#OpenSubtitlesConfigForm').on('submit', function () {
                 Dashboard.showLoadingMsg();
                 ApiClient.getPluginConfiguration(OpenSubtitlesConfig.pluginUniqueId).then(function (config) {
                     config.Username = $('#username').val();

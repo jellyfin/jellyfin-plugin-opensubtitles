@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Model.Providers;
 
-namespace MediaBrowser.MediaEncoding.Subtitles
+namespace Jellyfin.Plugin.OpenSubtitles
 {
     public static class ConfigurationExtension
     {

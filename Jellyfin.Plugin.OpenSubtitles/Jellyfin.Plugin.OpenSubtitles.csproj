@@ -8,6 +8,7 @@
   <ItemGroup>
     <PackageReference Include="Jellyfin.Controller" Version="10.2.0.1" />
     <PackageReference Include="Jellyfin.Model" Version="10.2.0.1" />
+    <ProjectReference Include="OpenSubtitlesHandler\OpenSubtitlesHandler.csproj" />
   </ItemGroup>
 
   <ItemGroup>

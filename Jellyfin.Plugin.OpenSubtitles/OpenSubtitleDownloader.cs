@@ -21,7 +21,7 @@ using MediaBrowser.Model.Serialization;
 using Microsoft.Extensions.Logging;
 using OpenSubtitlesHandler;
 
-namespace MediaBrowser.MediaEncoding.Subtitles
+namespace Jellyfin.Plugin.OpenSubtitles
 {
     public class OpenSubtitleDownloader : ISubtitleProvider, IDisposable
     {
@@ -45,7 +45,7 @@ namespace MediaBrowser.MediaEncoding.Subtitles
             _config.NamedConfigurationUpdating += _config_NamedConfigurationUpdating;
 
             Utilities.HttpClient = httpClient;
-            OpenSubtitles.SetUserAgent("jellyfin");
+            OpenSubtitlesHandler.OpenSubtitles.SetUserAgent("jellyfin");
         }
 
         private const string PasswordHashPrefix = "h:";
@@ -137,7 +137,7 @@ namespace MediaBrowser.MediaEncoding.Subtitles
                 throw new RateLimitExceededException("OpenSubtitles rate limit reached");
             }
 
-            var resultDownLoad = await OpenSubtitles.DownloadSubtitlesAsync(downloadsList, cancellationToken).ConfigureAwait(false);
+            var resultDownLoad = await OpenSubtitlesHandler.OpenSubtitles.DownloadSubtitlesAsync(downloadsList, cancellationToken).ConfigureAwait(false);
 
             if ((resultDownLoad.Status ?? string.Empty).IndexOf("407", StringComparison.OrdinalIgnoreCase) != -1)
             {
@@ -189,7 +189,7 @@ namespace MediaBrowser.MediaEncoding.Subtitles
             var user = options.OpenSubtitlesUsername ?? string.Empty;
             var password = DecodePassword(options.OpenSubtitlesPasswordHash);
 
-            var loginResponse = await OpenSubtitles.LogInAsync(user, password, "en", cancellationToken).ConfigureAwait(false);
+            var loginResponse = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(user, password, "en", cancellationToken).ConfigureAwait(false);
 
             if (!(loginResponse is MethodResponseLogIn))
             {
@@ -203,7 +203,7 @@ namespace MediaBrowser.MediaEncoding.Subtitles
         {
             await Login(cancellationToken).ConfigureAwait(false);
 
-            var result = OpenSubtitles.GetSubLanguages("en");
+            var result = OpenSubtitlesHandler.OpenSubtitles.GetSubLanguages("en");
             if (!(result is MethodResponseGetSubLanguages))
             {
                 _logger.LogError("Invalid response type");
@@ -295,7 +295,7 @@ namespace MediaBrowser.MediaEncoding.Subtitles
                                                                    imdbid: searchImdbId ),
                                                            };
             parms.AddRange(subtitleSearchParameters);
-            var result = await OpenSubtitles.SearchSubtitlesAsync(parms.ToArray(), cancellationToken).ConfigureAwait(false);
+            var result = await OpenSubtitlesHandler.OpenSubtitles.SearchSubtitlesAsync(parms.ToArray(), cancellationToken).ConfigureAwait(false);
             if (!(result is MethodResponseSubtitleSearch))
             {
                 _logger.LogError("Invalid response type");
