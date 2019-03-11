@@ -1,7 +1,7 @@
 
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jellyfin.Plugin.OpenSubtitles", "Jellyfin.Plugin.OpenSubtitles.csproj", "{DCD0C8B9-A493-4A66-B8EE-8748D430B660}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jellyfin.Plugin.OpenSubtitles", "Jellyfin.Plugin.OpenSubtitles\Jellyfin.Plugin.OpenSubtitles.csproj", "{DCD0C8B9-A493-4A66-B8EE-8748D430B660}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
