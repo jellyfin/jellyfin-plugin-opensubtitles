@@ -6,6 +6,7 @@ nicename: "Open Subtitles"
 description: "Download subtitles for your media"
 overview: "Download subtitles from the internet to use with your media files."
 category: "General"
+owner: "jellyfin"
 artifacts:
   - "Jellyfin.Plugin.OpenSubtitles.dll"
   - "OpenSubtitlesHandler.dll"
