@@ -100,11 +100,11 @@ namespace OpenSubtitlesHandler
             return new MethodResponseError("Fail", "Log in failed !");
         }
 
-        public static async Task<IMethodResponse> LogInAsync(string userName, string password, string language, CancellationToken cancellationToken)
+        public static async Task<IMethodResponse> LogInAsync(string username, string password, string language, CancellationToken cancellationToken)
         {
             // Method call ..
             var parms = new List<IXmlRpcValue>();
-            parms.Add(new XmlRpcValueBasic(userName));
+            parms.Add(new XmlRpcValueBasic(username));
             parms.Add(new XmlRpcValueBasic(password));
             parms.Add(new XmlRpcValueBasic(language));
             parms.Add(new XmlRpcValueBasic(XML_PRC_USERAGENT));

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Jellyfin.Plugin.OpenSubtitles.Configuration;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Extensions;
 using MediaBrowser.Common.Net;
@@ -23,7 +24,7 @@ using OpenSubtitlesHandler;
 
 namespace Jellyfin.Plugin.OpenSubtitles
 {
-    public class OpenSubtitleDownloader : ISubtitleProvider, IDisposable
+    public class OpenSubtitleDownloader : ISubtitleProvider
     {
         private readonly ILogger _logger;
         private readonly IHttpClient _httpClient;
@@ -42,53 +43,15 @@ namespace Jellyfin.Plugin.OpenSubtitles
             _json = json;
             _fileSystem = fileSystem;
 
-            _config.NamedConfigurationUpdating += _config_NamedConfigurationUpdating;
-
             Utilities.HttpClient = httpClient;
             OpenSubtitlesHandler.OpenSubtitles.SetUserAgent("jellyfin");
         }
 
-        private const string PasswordHashPrefix = "h:";
-        void _config_NamedConfigurationUpdating(object sender, ConfigurationUpdateEventArgs e)
-        {
-            if (!string.Equals(e.Key, "subtitles", StringComparison.OrdinalIgnoreCase))
-            {
-                return;
-            }
-
-            var options = (SubtitleOptions)e.NewConfiguration;
-
-            if (options != null &&
-                !string.IsNullOrWhiteSpace(options.OpenSubtitlesPasswordHash) &&
-                !options.OpenSubtitlesPasswordHash.StartsWith(PasswordHashPrefix, StringComparison.OrdinalIgnoreCase))
-            {
-                options.OpenSubtitlesPasswordHash = EncodePassword(options.OpenSubtitlesPasswordHash);
-            }
-        }
-
-        private static string EncodePassword(string password)
-        {
-            var bytes = Encoding.UTF8.GetBytes(password);
-            return PasswordHashPrefix + Convert.ToBase64String(bytes);
-        }
-
-        private static string DecodePassword(string password)
-        {
-            if (password == null ||
-                !password.StartsWith(PasswordHashPrefix, StringComparison.OrdinalIgnoreCase))
-            {
-                return string.Empty;
-            }
-
-            var bytes = Convert.FromBase64String(password.Substring(2));
-            return Encoding.UTF8.GetString(bytes, 0, bytes.Length);
-        }
-
         public string Name => "Open Subtitles";
 
-        private SubtitleOptions GetOptions()
+        private PluginConfiguration GetOptions()
         {
-            return _config.GetSubtitleConfiguration();
+            return Plugin.Instance.Configuration;
         }
 
         public IEnumerable<VideoContentType> SupportedMediaTypes
@@ -96,9 +59,8 @@ namespace Jellyfin.Plugin.OpenSubtitles
             get
             {
                 var options = GetOptions();
-
-                if (string.IsNullOrWhiteSpace(options.OpenSubtitlesUsername) ||
-                    string.IsNullOrWhiteSpace(options.OpenSubtitlesPasswordHash))
+                if (string.IsNullOrWhiteSpace(options.Username) ||
+                    string.IsNullOrWhiteSpace(options.Password))
                 {
                     return new VideoContentType[] { };
                 }
@@ -114,7 +76,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
         private DateTime _lastRateLimitException;
         private async Task<SubtitleResponse> GetSubtitlesInternal(string id,
-            SubtitleOptions options,
+            PluginConfiguration options,
             CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(id))
@@ -185,11 +147,10 @@ namespace Jellyfin.Plugin.OpenSubtitles
             }
 
             var options = GetOptions();
+            var username = options.Username ?? string.Empty;
+            var password = options.Password ?? string.Empty;
 
-            var user = options.OpenSubtitlesUsername ?? string.Empty;
-            var password = DecodePassword(options.OpenSubtitlesPasswordHash);
-
-            var loginResponse = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(user, password, "en", cancellationToken).ConfigureAwait(false);
+            var loginResponse = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(username, password, "en", cancellationToken).ConfigureAwait(false);
 
             if (!(loginResponse is MethodResponseLogIn))
             {
@@ -337,11 +298,6 @@ namespace Jellyfin.Plugin.OpenSubtitles
                         IsHashMatch = i.MovieHash == hasCopy
 
                     }).Where(i => !string.Equals(i.Format, "sub", StringComparison.OrdinalIgnoreCase) && !string.Equals(i.Format, "idx", StringComparison.OrdinalIgnoreCase));
-        }
-
-        public void Dispose()
-        {
-            _config.NamedConfigurationUpdating -= _config_NamedConfigurationUpdating;
         }
     }
 }
