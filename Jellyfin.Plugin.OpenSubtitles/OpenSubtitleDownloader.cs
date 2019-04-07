@@ -58,13 +58,6 @@ namespace Jellyfin.Plugin.OpenSubtitles
         {
             get
             {
-                var options = GetOptions();
-                if (string.IsNullOrWhiteSpace(options.Username) ||
-                    string.IsNullOrWhiteSpace(options.Password))
-                {
-                    return new VideoContentType[] { };
-                }
-
                 return new[] { VideoContentType.Episode, VideoContentType.Movie };
             }
         }
