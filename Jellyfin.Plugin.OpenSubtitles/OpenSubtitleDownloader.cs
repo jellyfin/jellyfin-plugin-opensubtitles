@@ -3,16 +3,13 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.OpenSubtitles.Configuration;
-using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Extensions;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Providers;
-using MediaBrowser.Controller.Security;
 using MediaBrowser.Controller.Subtitles;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
@@ -58,13 +55,6 @@ namespace Jellyfin.Plugin.OpenSubtitles
         {
             get
             {
-                var options = GetOptions();
-                if (string.IsNullOrWhiteSpace(options.Username) ||
-                    string.IsNullOrWhiteSpace(options.Password))
-                {
-                    return new VideoContentType[] { };
-                }
-
                 return new[] { VideoContentType.Episode, VideoContentType.Movie };
             }
         }
@@ -147,10 +137,13 @@ namespace Jellyfin.Plugin.OpenSubtitles
             }
 
             var options = GetOptions();
-            var username = options.Username ?? string.Empty;
-            var password = options.Password ?? string.Empty;
+            if (options.Username == string.Empty || options.Password == string.Empty)
+            {
+                _logger.LogWarning("The username or password has no value. Attempting to access the service without an account.");
+                return;
+            }
 
-            var loginResponse = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(username, password, "en", cancellationToken).ConfigureAwait(false);
+            var loginResponse = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(options.Username, options.Password, "en", cancellationToken).ConfigureAwait(false);
 
             if (!(loginResponse is MethodResponseLogIn))
             {
@@ -185,7 +178,6 @@ namespace Jellyfin.Plugin.OpenSubtitles
             // Problem with Greek subtitle download #1349
             if (string.Equals(language, "gre", StringComparison.OrdinalIgnoreCase))
             {
-
                 return "ell";
             }
 
