@@ -3,11 +3,13 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>Jellyfin.Plugin.OpenSubtitles</RootNamespace>
+    <AssemblyVersion>2.0.0</AssemblyVersion>
+    <FileVersion>2.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Jellyfin.Controller" Version="10.2.0.1" />
-    <PackageReference Include="Jellyfin.Model" Version="10.2.0.1" />
+    <PackageReference Include="Jellyfin.Controller" Version="10.*" />
+    <PackageReference Include="Jellyfin.Model" Version="10.*" />
     <ProjectReference Include="OpenSubtitlesHandler\OpenSubtitlesHandler.csproj" />
   </ItemGroup>
 
