@@ -1,9 +1,9 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jellyfin.Plugin.OpenSubtitles", "Jellyfin.Plugin.OpenSubtitles\Jellyfin.Plugin.OpenSubtitles.csproj", "{DCD0C8B9-A493-4A66-B8EE-8748D430B660}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenSubtitlesHandler", "Jellyfin.Plugin.OpenSubtitles\OpenSubtitlesHandler\OpenSubtitlesHandler.csproj", "{442B5058-DCAF-4263-BB6A-F21E31120A1B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenSubtitlesHandler", "OpenSubtitlesHandler\OpenSubtitlesHandler.csproj", "{A0EC3687-1E65-4E2C-913E-246BAB14D8F0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,9 +15,9 @@ Global
 		{DCD0C8B9-A493-4A66-B8EE-8748D430B660}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DCD0C8B9-A493-4A66-B8EE-8748D430B660}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DCD0C8B9-A493-4A66-B8EE-8748D430B660}.Release|Any CPU.Build.0 = Release|Any CPU
-		{442B5058-DCAF-4263-BB6A-F21E31120A1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{442B5058-DCAF-4263-BB6A-F21E31120A1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{442B5058-DCAF-4263-BB6A-F21E31120A1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{442B5058-DCAF-4263-BB6A-F21E31120A1B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0EC3687-1E65-4E2C-913E-246BAB14D8F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0EC3687-1E65-4E2C-913E-246BAB14D8F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0EC3687-1E65-4E2C-913E-246BAB14D8F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0EC3687-1E65-4E2C-913E-246BAB14D8F0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
