@@ -4,7 +4,7 @@ using System.Text;
 
 namespace OpenSubtitlesHandler
 {
-    public class MovieHasher
+    public static class MovieHasher
     {
         public static byte[] ComputeMovieHash(Stream input)
         {
