@@ -30,7 +30,7 @@ namespace OpenSubtitlesHandler
     /// <summary>
     /// Include helper methods. All member are statics.
     /// </summary>
-    public sealed class Utilities
+    public static class Utilities
     {
         public static IHttpClient HttpClient { get; set; }
         private const string XML_RPC_SERVER = "https://api.opensubtitles.org/xml-rpc";
