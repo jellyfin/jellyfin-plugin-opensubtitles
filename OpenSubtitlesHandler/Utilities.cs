@@ -30,13 +30,12 @@ namespace OpenSubtitlesHandler
     /// <summary>
     /// Include helper methods. All member are statics.
     /// </summary>
-    public sealed class Utilities
+    public static class Utilities
     {
-        public static ICryptoProvider CryptographyProvider { get; set; }
         public static IHttpClient HttpClient { get; set; }
-        private static string XML_RPC_SERVER = "https://api.opensubtitles.org/xml-rpc";
-        //private static string XML_RPC_SERVER = "https://92.240.234.122/xml-rpc";
-        private static string HostHeader = "api.opensubtitles.org:443";
+        private const string XML_RPC_SERVER = "https://api.opensubtitles.org/xml-rpc";
+        //private const string XML_RPC_SERVER = "https://92.240.234.122/xml-rpc";
+        private const string HostHeader = "api.opensubtitles.org:443";
 
         /// <summary>
         /// Compute movie hash
@@ -47,6 +46,7 @@ namespace OpenSubtitlesHandler
             byte[] hash = MovieHasher.ComputeMovieHash(stream);
             return MovieHasher.ToHexadecimal(hash);
         }
+
         /// <summary>
         /// Decompress data using GZip
         /// </summary>
@@ -169,6 +169,5 @@ namespace OpenSubtitlesHandler
 
             return result.Content;
         }
-
     }
 }

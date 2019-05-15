@@ -23,21 +23,15 @@ namespace Jellyfin.Plugin.OpenSubtitles
 {
     public class OpenSubtitleDownloader : ISubtitleProvider
     {
+        private static readonly CultureInfo _usCulture = CultureInfo.ReadOnly(new CultureInfo("en-US"));
         private readonly ILogger _logger;
-        private readonly IHttpClient _httpClient;
-        private readonly CultureInfo _usCulture = new CultureInfo("en-US");
-
-        private readonly IServerConfigurationManager _config;
-
-        private readonly IJsonSerializer _json;
         private readonly IFileSystem _fileSystem;
+        private DateTime _lastRateLimitException;
+        private DateTime _lastLogin;
 
-        public OpenSubtitleDownloader(ILoggerFactory loggerFactory, IHttpClient httpClient, IServerConfigurationManager config, IJsonSerializer json, IFileSystem fileSystem)
+        public OpenSubtitleDownloader(ILogger<OpenSubtitleDownloader> logger, IFileSystem fileSystem, IHttpClient httpClient)
         {
-            _logger = loggerFactory.CreateLogger(GetType().Name);
-            _httpClient = httpClient;
-            _config = config;
-            _json = json;
+            _logger = logger;
             _fileSystem = fileSystem;
 
             Utilities.HttpClient = httpClient;
@@ -47,25 +41,16 @@ namespace Jellyfin.Plugin.OpenSubtitles
         public string Name => "Open Subtitles";
 
         private PluginConfiguration GetOptions()
-        {
-            return Plugin.Instance.Configuration;
-        }
+            => Plugin.Instance.Configuration;
 
         public IEnumerable<VideoContentType> SupportedMediaTypes
-        {
-            get
-            {
-                return new[] { VideoContentType.Episode, VideoContentType.Movie };
-            }
-        }
+            => new[] { VideoContentType.Episode, VideoContentType.Movie };
 
         public Task<SubtitleResponse> GetSubtitles(string id, CancellationToken cancellationToken)
-        {
-            return GetSubtitlesInternal(id, GetOptions(), cancellationToken);
-        }
+            => GetSubtitlesInternal(id, GetOptions(), cancellationToken);
 
-        private DateTime _lastRateLimitException;
-        private async Task<SubtitleResponse> GetSubtitlesInternal(string id,
+        private async Task<SubtitleResponse> GetSubtitlesInternal(
+            string id,
             PluginConfiguration options,
             CancellationToken cancellationToken)
         {
@@ -117,7 +102,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 throw new ResourceNotFoundException(msg);
             }
 
-            var data = Convert.FromBase64String(results.First().Data);
+            var data = Convert.FromBase64String(results[0].Data);
 
             return new SubtitleResponse
             {
@@ -128,7 +113,6 @@ namespace Jellyfin.Plugin.OpenSubtitles
             };
         }
 
-        private DateTime _lastLogin;
         private async Task Login(CancellationToken cancellationToken)
         {
             if ((DateTime.UtcNow - _lastLogin).TotalSeconds < 60)
@@ -137,7 +121,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             }
 
             var options = GetOptions();
-            if (options.Username == string.Empty || options.Password == string.Empty)
+            if (options.Username.Length == 0 || options.Password.Length == 0)
             {
                 _logger.LogWarning("The username or password has no value. Attempting to access the service without an account.");
                 return;
@@ -161,7 +145,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             if (!(result is MethodResponseGetSubLanguages))
             {
                 _logger.LogError("Invalid response type");
-                return new List<NameIdPair>();
+                return Enumerable.Empty<NameIdPair>();
             }
 
             var results = ((MethodResponseGetSubLanguages)result).Languages;
@@ -173,7 +157,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             });
         }
 
-        private string NormalizeLanguage(string language)
+        private static string NormalizeLanguage(string language)
         {
             // Problem with Greek subtitle download #1349
             if (string.Equals(language, "gre", StringComparison.OrdinalIgnoreCase))
@@ -195,19 +179,19 @@ namespace Jellyfin.Plugin.OpenSubtitles
                     if (!request.IndexNumber.HasValue || !request.ParentIndexNumber.HasValue || string.IsNullOrEmpty(request.SeriesName))
                     {
                         _logger.LogDebug("Episode information missing");
-                        return new List<RemoteSubtitleInfo>();
+                        return Enumerable.Empty<RemoteSubtitleInfo>();
                     }
                     break;
                 case VideoContentType.Movie:
                     if (string.IsNullOrEmpty(request.Name))
                     {
                         _logger.LogDebug("Movie name missing");
-                        return new List<RemoteSubtitleInfo>();
+                        return Enumerable.Empty<RemoteSubtitleInfo>();
                     }
                     if (string.IsNullOrWhiteSpace(imdbIdText) || !long.TryParse(imdbIdText.TrimStart('t'), NumberStyles.Any, _usCulture, out imdbId))
                     {
                         _logger.LogDebug("Imdb id missing");
-                        return new List<RemoteSubtitleInfo>();
+                        return Enumerable.Empty<RemoteSubtitleInfo>();
                     }
                     break;
             }
@@ -215,18 +199,19 @@ namespace Jellyfin.Plugin.OpenSubtitles
             if (string.IsNullOrEmpty(request.MediaPath))
             {
                 _logger.LogDebug("Path Missing");
-                return new List<RemoteSubtitleInfo>();
+                return Enumerable.Empty<RemoteSubtitleInfo>();
             }
 
             await Login(cancellationToken).ConfigureAwait(false);
 
             var subLanguageId = NormalizeLanguage(request.Language);
-            string hash;
 
+            string hash;
             using (var fileStream = File.OpenRead(request.MediaPath))
             {
                 hash = Utilities.ComputeHash(fileStream);
             }
+
             var fileInfo = _fileSystem.GetFileInfo(request.MediaPath);
             var movieByteSize = fileInfo.Length;
             var searchImdbId = request.ContentType == VideoContentType.Movie ? imdbId.ToString(_usCulture) : "";
@@ -252,7 +237,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             if (!(result is MethodResponseSubtitleSearch))
             {
                 _logger.LogError("Invalid response type");
-                return new List<RemoteSubtitleInfo>();
+                return Enumerable.Empty<RemoteSubtitleInfo>();
             }
 
             Predicate<SubtitleSearchResult> mediaFilter =

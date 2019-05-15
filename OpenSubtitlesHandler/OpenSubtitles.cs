@@ -33,9 +33,9 @@ namespace OpenSubtitlesHandler
     /// </summary>
     public sealed class OpenSubtitles
     {
-        private static string XML_PRC_USERAGENT = "";
+        private static string XML_PRC_USERAGENT = string.Empty;
         // This is session id after log in, important value and MUST be set by LogIn before any other call.
-        private static string TOKEN = "";
+        private static string TOKEN = string.Empty;
 
         /// <summary>
         /// Set the useragent value. This must be called before doing anything else.
@@ -57,11 +57,13 @@ namespace OpenSubtitlesHandler
         public static IMethodResponse LogIn(string userName, string password, string language)
         {
             // Method call ..
-            var parms = new List<IXmlRpcValue>();
-            parms.Add(new XmlRpcValueBasic(userName));
-            parms.Add(new XmlRpcValueBasic(password));
-            parms.Add(new XmlRpcValueBasic(language));
-            parms.Add(new XmlRpcValueBasic(XML_PRC_USERAGENT));
+            var parms = new List<IXmlRpcValue>()
+            {
+                new XmlRpcValueBasic(userName),
+                new XmlRpcValueBasic(password),
+                new XmlRpcValueBasic(language),
+                new XmlRpcValueBasic(XML_PRC_USERAGENT)
+            };
             var call = new XmlRpcMethodCall("LogIn", parms);
             OSHConsole.WriteLine("Sending LogIn request to the server ...", DebugCode.Good);
 
@@ -164,7 +166,7 @@ namespace OpenSubtitlesHandler
         /// <returns></returns>
         public static IMethodResponse LogOut()
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
@@ -200,6 +202,7 @@ namespace OpenSubtitlesHandler
                 OSHConsole.WriteLine(response, DebugCode.Error);
                 return new MethodResponseError("Fail", response);
             }
+
             return new MethodResponseError("Fail", "Log out failed !");
         }
         /// <summary>
@@ -208,15 +211,18 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation</returns>
         public static IMethodResponse NoOperation()
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
             }
+
             // Method call ..
-            var parms = new List<IXmlRpcValue>();
-            parms.Add(new XmlRpcValueBasic(TOKEN, XmlRpcBasicValueType.String));
-            parms.Add(new XmlRpcValueBasic(XML_PRC_USERAGENT, XmlRpcBasicValueType.String));
+            var parms = new List<IXmlRpcValue>()
+            {
+                new XmlRpcValueBasic(TOKEN, XmlRpcBasicValueType.String),
+                new XmlRpcValueBasic(XML_PRC_USERAGENT, XmlRpcBasicValueType.String)
+            };
             var call = new XmlRpcMethodCall("NoOperation", parms);
 
             OSHConsole.WriteLine("Sending NoOperation request to the server ...", DebugCode.Good);
@@ -254,9 +260,11 @@ namespace OpenSubtitlesHandler
                                             case "client_24h_download_limit": R.client_24h_download_limit = dlmember.Data.Data.ToString(); break;
                                         }
                                     }
+
                                     break;
                             }
                         }
+
                         return R;
                     }
                 }
@@ -266,6 +274,7 @@ namespace OpenSubtitlesHandler
                 OSHConsole.WriteLine(response, DebugCode.Error);
                 return new MethodResponseError("Fail", response);
             }
+
             return new MethodResponseError("Fail", "NoOperation call failed !");
         }
         /*Search and download*/
@@ -276,11 +285,12 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseSubtitleSearch'</returns>
         public static IMethodResponse SearchSubtitles(SubtitleSearchParameters[] parameters)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
             }
+
             if (parameters == null)
             {
                 OSHConsole.UpdateLine("No subtitle search parameter passed !!", DebugCode.Error);
@@ -291,10 +301,11 @@ namespace OpenSubtitlesHandler
                 OSHConsole.UpdateLine("No subtitle search parameter passed !!", DebugCode.Error);
                 return new MethodResponseError("Fail", "No subtitle search parameter passed");
             }
-            // Method call ..
-            var parms = new List<IXmlRpcValue>();
-            // Add token param
-            parms.Add(new XmlRpcValueBasic(TOKEN, XmlRpcBasicValueType.String));
+
+            var parms = new List<IXmlRpcValue>()
+            {
+                new XmlRpcValueBasic(TOKEN, XmlRpcBasicValueType.String)
+            };
             // Add subtitle search parameters. Each one will be like 'array' of structs.
             var array = new XmlRpcValueArray();
             foreach (SubtitleSearchParameters param in parameters)
@@ -315,6 +326,7 @@ namespace OpenSubtitlesHandler
                         new XmlRpcValueBasic(param.MovieByteSize, XmlRpcBasicValueType.Int));
                     strct.Members.Add(member);
                 }
+
                 if (param.Query.Length > 0)
                 {
                     member = new XmlRpcStructMember("query",
@@ -339,9 +351,11 @@ namespace OpenSubtitlesHandler
                         new XmlRpcValueBasic(param.IMDbID, XmlRpcBasicValueType.String));
                     strct.Members.Add(member);
                 }
+
                 // Add the struct to the array
                 array.Values.Add(strct);
             }
+
             // Add the array to the parameters
             parms.Add(array);
             // Call !
@@ -441,6 +455,7 @@ namespace OpenSubtitlesHandler
                                 }
                             }
                         }
+
                         // Return the response to user !!
                         return R;
                     }
@@ -451,30 +466,34 @@ namespace OpenSubtitlesHandler
                 OSHConsole.WriteLine(response, DebugCode.Error);
                 return new MethodResponseError("Fail", response);
             }
+
             return new MethodResponseError("Fail", "Search Subtitles call failed !");
         }
 
         public static async Task<IMethodResponse> SearchSubtitlesAsync(SubtitleSearchParameters[] parameters, CancellationToken cancellationToken)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
             }
+
             if (parameters == null)
             {
                 OSHConsole.UpdateLine("No subtitle search parameter passed !!", DebugCode.Error);
                 return new MethodResponseError("Fail", "No subtitle search parameter passed");
             }
+
             if (parameters.Length == 0)
             {
                 OSHConsole.UpdateLine("No subtitle search parameter passed !!", DebugCode.Error);
                 return new MethodResponseError("Fail", "No subtitle search parameter passed");
             }
-            // Method call ..
-            var parms = new List<IXmlRpcValue>();
-            // Add token param
-            parms.Add(new XmlRpcValueBasic(TOKEN, XmlRpcBasicValueType.String));
+
+            var parms = new List<IXmlRpcValue>()
+            {
+                new XmlRpcValueBasic(TOKEN, XmlRpcBasicValueType.String)
+            };
             // Add subtitle search parameters. Each one will be like 'array' of structs.
             var array = new XmlRpcValueArray();
             foreach (SubtitleSearchParameters param in parameters)
@@ -495,6 +514,7 @@ namespace OpenSubtitlesHandler
                         new XmlRpcValueBasic(param.MovieByteSize, XmlRpcBasicValueType.Int));
                     strct.Members.Add(member);
                 }
+
                 if (param.Query.Length > 0)
                 {
                     member = new XmlRpcStructMember("query",
@@ -519,9 +539,11 @@ namespace OpenSubtitlesHandler
                         new XmlRpcValueBasic(param.IMDbID, XmlRpcBasicValueType.String));
                     strct.Members.Add(member);
                 }
+
                 // Add the struct to the array
                 array.Values.Add(strct);
             }
+
             // Add the array to the parameters
             parms.Add(array);
             // Call !
@@ -621,6 +643,7 @@ namespace OpenSubtitlesHandler
                                 }
                             }
                         }
+
                         // Return the response to user !!
                         return R;
                     }
@@ -631,6 +654,7 @@ namespace OpenSubtitlesHandler
                 OSHConsole.WriteLine(response, DebugCode.Error);
                 return new MethodResponseError("Fail", response);
             }
+
             return new MethodResponseError("Fail", "Search Subtitles call failed !");
         }
 
@@ -641,31 +665,35 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseSubtitleDownload' which will hold downloaded subtitles</returns>
         public static IMethodResponse DownloadSubtitles(int[] subIDS)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
             }
+
             if (subIDS == null)
             {
                 OSHConsole.UpdateLine("No subtitle id passed !!", DebugCode.Error);
                 return new MethodResponseError("Fail", "No subtitle id passed");
             }
+
             if (subIDS.Length == 0)
             {
                 OSHConsole.UpdateLine("No subtitle id passed !!", DebugCode.Error);
                 return new MethodResponseError("Fail", "No subtitle id passed");
             }
-            // Method call ..
-            var parms = new List<IXmlRpcValue>();
-            // Add token param
-            parms.Add(new XmlRpcValueBasic(TOKEN, XmlRpcBasicValueType.String));
+
+            var parms = new List<IXmlRpcValue>()
+            {
+                new XmlRpcValueBasic(TOKEN, XmlRpcBasicValueType.String)
+            };
             // Add subtitle search parameters. Each one will be like 'array' of structs.
             var array = new XmlRpcValueArray();
             foreach (int id in subIDS)
             {
                 array.Values.Add(new XmlRpcValueBasic(id, XmlRpcBasicValueType.Int));
             }
+
             // Add the array to the parameters
             parms.Add(array);
             // Call !
@@ -743,30 +771,34 @@ namespace OpenSubtitlesHandler
                 OSHConsole.WriteLine(response, DebugCode.Error);
                 return new MethodResponseError("Fail", response);
             }
+
             return new MethodResponseError("Fail", "DownloadSubtitles call failed !");
         }
 
         public static async Task<IMethodResponse> DownloadSubtitlesAsync(int[] subIDS, CancellationToken cancellationToken)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
             }
+
             if (subIDS == null)
             {
                 OSHConsole.UpdateLine("No subtitle id passed !!", DebugCode.Error);
                 return new MethodResponseError("Fail", "No subtitle id passed");
             }
+
             if (subIDS.Length == 0)
             {
                 OSHConsole.UpdateLine("No subtitle id passed !!", DebugCode.Error);
                 return new MethodResponseError("Fail", "No subtitle id passed");
             }
-            // Method call ..
-            var parms = new List<IXmlRpcValue>();
-            // Add token param
-            parms.Add(new XmlRpcValueBasic(TOKEN, XmlRpcBasicValueType.String));
+
+            var parms = new List<IXmlRpcValue>()
+            {
+                new XmlRpcValueBasic(TOKEN, XmlRpcBasicValueType.String)
+            };
             // Add subtitle search parameters. Each one will be like 'array' of structs.
             var array = new XmlRpcValueArray();
             foreach (int id in subIDS)
@@ -820,8 +852,10 @@ namespace OpenSubtitlesHandler
                                     var rarray = (XmlRpcValueArray)MEMBER.Data;
                                     foreach (IXmlRpcValue subStruct in rarray.Values)
                                     {
-                                        if (subStruct == null) continue;
-                                        if (!(subStruct is XmlRpcValueStruct)) continue;
+                                        if (subStruct == null || !(subStruct is XmlRpcValueStruct))
+                                        {
+                                            continue;
+                                        }
 
                                         var result = new SubtitleDownloadResult();
                                         foreach (XmlRpcStructMember submember in ((XmlRpcValueStruct)subStruct).Members)
@@ -833,6 +867,7 @@ namespace OpenSubtitlesHandler
                                                 case "data": result.Data = (string)submember.Data.Data; break;
                                             }
                                         }
+
                                         R.Results.Add(result);
                                         OSHConsole.WriteLine("> IDSubtilteFile= " + result.ToString());
                                     }
@@ -843,6 +878,7 @@ namespace OpenSubtitlesHandler
                                 }
                             }
                         }
+
                         // Return the response to user !!
                         return R;
                     }
@@ -853,6 +889,7 @@ namespace OpenSubtitlesHandler
                 OSHConsole.WriteLine(response, DebugCode.Error);
                 return new MethodResponseError("Fail", response);
             }
+
             return new MethodResponseError("Fail", "DownloadSubtitles call failed !");
         }
 
@@ -863,25 +900,28 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseGetComments'</returns>
         public static IMethodResponse GetComments(int[] subIDS)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
             }
+
             if (subIDS == null)
             {
                 OSHConsole.UpdateLine("No subtitle id passed !!", DebugCode.Error);
                 return new MethodResponseError("Fail", "No subtitle id passed");
             }
+
             if (subIDS.Length == 0)
             {
                 OSHConsole.UpdateLine("No subtitle id passed !!", DebugCode.Error);
                 return new MethodResponseError("Fail", "No subtitle id passed");
             }
-            // Method call ..
-            var parms = new List<IXmlRpcValue>();
-            // Add token param
-            parms.Add(new XmlRpcValueBasic(TOKEN));
+
+            var parms = new List<IXmlRpcValue>()
+            {
+                new XmlRpcValueBasic(TOKEN)
+            };
             // Add subtitle search parameters. Each one will be like 'array' of structs.
             var array = new XmlRpcValueArray(subIDS);
             // Add the array to the parameters
@@ -950,6 +990,7 @@ namespace OpenSubtitlesHandler
                                 }
                             }
                         }
+
                         // Return the response to user !!
                         return R;
                     }
@@ -960,6 +1001,7 @@ namespace OpenSubtitlesHandler
                 OSHConsole.WriteLine(response, DebugCode.Error);
                 return new MethodResponseError("Fail", response);
             }
+
             return new MethodResponseError("Fail", "GetComments call failed !");
         }
 
@@ -971,14 +1013,16 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseSearchToMail'</returns>
         public static IMethodResponse SearchToMail(string[] languageIDS, SearchToMailMovieParameter[] movies)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
             }
-            // Method call ..
-            var parms = new List<IXmlRpcValue>();
-            parms.Add(new XmlRpcValueBasic(TOKEN, XmlRpcBasicValueType.String));
+
+            var parms = new List<IXmlRpcValue>()
+            {
+                new XmlRpcValueBasic(TOKEN, XmlRpcBasicValueType.String)
+            };
             // Array of sub langs
             var a = new XmlRpcValueArray(languageIDS);
             parms.Add(a);
@@ -1028,6 +1072,7 @@ namespace OpenSubtitlesHandler
                 OSHConsole.WriteLine(response, DebugCode.Error);
                 return new MethodResponseError("Fail", response);
             }
+
             return new MethodResponseError("Fail", "SearchToMail call failed !");
         }
         /*Movies*/
@@ -1038,17 +1083,17 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseSubtitleSearch'</returns>
         public static IMethodResponse SearchMoviesOnIMDB(string query)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
             }
-            // Method call ..
-            var parms = new List<IXmlRpcValue>();
-            // Add token param
-            parms.Add(new XmlRpcValueBasic(TOKEN, XmlRpcBasicValueType.String));
-            // Add query param
-            parms.Add(new XmlRpcValueBasic(query, XmlRpcBasicValueType.String));
+
+            var parms = new List<IXmlRpcValue>()
+            {
+                new XmlRpcValueBasic(TOKEN, XmlRpcBasicValueType.String),
+                new XmlRpcValueBasic(query, XmlRpcBasicValueType.String)
+            };
             // Call !
             var call = new XmlRpcMethodCall("SearchMoviesOnIMDB", parms);
             OSHConsole.WriteLine("Sending SearchMoviesOnIMDB request to the server ...", DebugCode.Good);
@@ -1110,6 +1155,7 @@ namespace OpenSubtitlesHandler
                                 }
                             }
                         }
+
                         // Return the response to user !!
                         return R;
                     }
@@ -1120,6 +1166,7 @@ namespace OpenSubtitlesHandler
                 OSHConsole.WriteLine(response, DebugCode.Error);
                 return new MethodResponseError("Fail", response);
             }
+
             return new MethodResponseError("Fail", "SearchMoviesOnIMDB call failed !");
         }
         /// <summary>
@@ -1129,17 +1176,17 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseMovieDetails'</returns>
         public static IMethodResponse GetIMDBMovieDetails(string imdbid)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
             }
-            // Method call ..
-            var parms = new List<IXmlRpcValue>();
-            // Add token param
-            parms.Add(new XmlRpcValueBasic(TOKEN));
-            // Add query param
-            parms.Add(new XmlRpcValueBasic(imdbid));
+
+            var parms = new List<IXmlRpcValue>()
+            {
+                new XmlRpcValueBasic(TOKEN),
+                new XmlRpcValueBasic(imdbid)
+            };
             // Call !
             var call = new XmlRpcMethodCall("GetIMDBMovieDetails", parms);
             OSHConsole.WriteLine("Sending GetIMDBMovieDetails request to the server ...", DebugCode.Good);
@@ -1278,6 +1325,7 @@ namespace OpenSubtitlesHandler
                                 }
                             }
                         }
+
                         // Return the response to user !!
                         return R;
                     }
@@ -1288,6 +1336,7 @@ namespace OpenSubtitlesHandler
                 OSHConsole.WriteLine(response, DebugCode.Error);
                 return new MethodResponseError("Fail", response);
             }
+
             return new MethodResponseError("Fail", "GetIMDBMovieDetails call failed !");
         }
         /// <summary>
@@ -1298,11 +1347,12 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseInsertMovie'</returns>
         public static IMethodResponse InsertMovie(string movieName, string movieyear)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
             }
+
             // Method call ..
             var parms = new List<IXmlRpcValue>();
             // Add token param
@@ -1367,7 +1417,7 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseInsertMovieHash'</returns>
         public static IMethodResponse InsertMovieHash(InsertMovieHashParameters[] parameters)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
@@ -1466,7 +1516,7 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseServerInfo'</returns>
         public static IMethodResponse ServerInfo()
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
@@ -1596,7 +1646,7 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseReportWrongMovieHash'</returns>
         public static IMethodResponse ReportWrongMovieHash(string IDSubMovieFile)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
@@ -1660,7 +1710,7 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseReportWrongImdbMovie'</returns>
         public static IMethodResponse ReportWrongImdbMovie(string moviehash, string moviebytesize, string imdbid)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
@@ -1719,7 +1769,7 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseSubtitlesVote'</returns>
         public static IMethodResponse SubtitlesVote(int idsubtitle, int score)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
@@ -1791,7 +1841,7 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseAddComment'</returns>
         public static IMethodResponse AddComment(int idsubtitle, string comment, int badsubtitle)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
@@ -1851,7 +1901,7 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseAddRequest'</returns>
         public static IMethodResponse AddRequest(string sublanguageid, string idmovieimdb, string comment)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
@@ -1920,7 +1970,7 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseGetSubLanguages'</returns>
         public static IMethodResponse GetSubLanguages(string language)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
@@ -2003,7 +2053,7 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseDetectLanguage'</returns>
         public static IMethodResponse DetectLanguage(string[] texts, Encoding encodingUsed)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
@@ -2089,7 +2139,7 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseGetAvailableTranslations'</returns>
         public static IMethodResponse GetAvailableTranslations(string program)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
@@ -2172,7 +2222,7 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseGetTranslation'</returns>
         public static IMethodResponse GetTranslation(string iso639, string format, string program)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
@@ -2230,7 +2280,7 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseAutoUpdate'</returns>
         public static IMethodResponse AutoUpdate(string program)
         {
-            /*if (TOKEN == "")
+            /*if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
@@ -2290,7 +2340,7 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseCheckMovieHash'</returns>
         public static IMethodResponse CheckMovieHash(string[] hashes)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
@@ -2367,7 +2417,7 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseCheckMovieHash2'</returns>
         public static IMethodResponse CheckMovieHash2(string[] hashes)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
@@ -2453,7 +2503,7 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseCheckSubHash'</returns>
         public static IMethodResponse CheckSubHash(string[] hashes)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
@@ -2520,7 +2570,7 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseTryUploadSubtitles'</returns>
         public static IMethodResponse TryUploadSubtitles(TryUploadSubtitlesParameters[] subs)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
@@ -2652,7 +2702,7 @@ namespace OpenSubtitlesHandler
         /// <returns>Status of the call operation. If the call success the response will be 'MethodResponseUploadSubtitles'</returns>
         public static IMethodResponse UploadSubtitles(UploadSubtitleInfoParameters info)
         {
-            if (TOKEN == "")
+            if (TOKEN.Length == 0)
             {
                 OSHConsole.WriteLine("Can't do this call, 'token' value not set. Please use Log In method first.", DebugCode.Error);
                 return new MethodResponseError("Fail", "Can't do this call, 'token' value not set. Please use Log In method first.");
