@@ -154,7 +154,7 @@ namespace OpenSubtitlesHandler
                 Url = XML_RPC_SERVER,
 
                 // Response parsing will fail with this enabled
-                EnableHttpCompression = false,
+                DecompressionMethod = CompressionMethod.None,
 
                 CancellationToken = cancellationToken,
                 BufferContent = false
