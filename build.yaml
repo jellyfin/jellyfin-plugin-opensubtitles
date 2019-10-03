@@ -1,7 +1,7 @@
 ---
 name: "jellyfin-plugin-opensubtitles"
 guid: "4b9ed42f-5185-48b5-9803-6ff2989014c4"
-version: "5" # Please increment with each pull request
+version: "6" # Please increment with each pull request
 jellyfin_version: "10.3.7" # The earliest binary-compatible version
 owner: "jellyfin"
 nicename: "Open Subtitles"
