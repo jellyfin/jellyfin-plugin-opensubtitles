@@ -19,6 +19,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -140,10 +142,11 @@ namespace OpenSubtitlesHandler
         /// <returns>Response of the server or stream of error message as string started with 'ERROR:' keyword.</returns>
         public static Stream SendRequest(byte[] request, string userAgent)
         {
-            return SendRequestAsync(request, userAgent, CancellationToken.None).Result;
+            var result = SendRequestAsync(request, userAgent, CancellationToken.None).Result;
+            return result.Item1;
         }
 
-        public static async Task<Stream> SendRequestAsync(byte[] request, string userAgent, CancellationToken cancellationToken)
+        public static async Task<(Stream, int?, HttpStatusCode)> SendRequestAsync(byte[] request, string userAgent, CancellationToken cancellationToken)
         {
             var options = new HttpRequestOptions
             {
@@ -164,10 +167,20 @@ namespace OpenSubtitlesHandler
             {
                 options.UserAgent = "xmlrpc-epi-php/0.2 (PHP)";
             }
-
             var result = await HttpClient.Post(options).ConfigureAwait(false);
 
-            return result.Content;
+            IEnumerable<string> values;
+            int? limit = null;
+            if (result.Headers.TryGetValues("X-RateLimit-Remaining", out values))
+            {
+                int num;
+                if(int.TryParse(values.FirstOrDefault(), out num))
+                {
+                    limit = num;
+                }
+            }
+
+            return (result.Content, limit, result.StatusCode);
         }
     }
 }
