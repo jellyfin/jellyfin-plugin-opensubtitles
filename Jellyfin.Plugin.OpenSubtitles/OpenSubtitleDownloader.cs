@@ -148,7 +148,6 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 "en",
                 cancellationToken).ConfigureAwait(false);
 
-
             if (loginResponse.Item2 == 1)
             {
                 await Task.Delay(1000);
