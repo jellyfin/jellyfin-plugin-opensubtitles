@@ -142,15 +142,17 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 return;
             }
 
-            var loginResponse = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(options.Username, options.Password, "en", cancellationToken).ConfigureAwait(false);
+            var loginResponse = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(
+                options.Username,
+                options.Password,
+                "en",
+                cancellationToken).ConfigureAwait(false);
 
-            if (loginResponse.Item2 != null)
+            if (loginResponse.Item2 == 1)
             {
-                if (loginResponse.Item2 == 1)
-                {
-                    await Task.Delay(1000);
-                }
+                await Task.Delay(1000);
             }
+
             if (!(loginResponse.Item1 is MethodResponseLogIn))
             {
                 throw new Exception("Authentication to OpenSubtitles failed.");
