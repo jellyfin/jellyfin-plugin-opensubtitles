@@ -9,7 +9,7 @@ This is a plugin built with .NET that can download subtitles from https://opensu
 ## Build Process
 1. Clone or download this repository
 2. Ensure you have .NET Core SDK setup and installed
-3. Build plugin with following command.
+3. Build plugin with following command
 ```sh
 dotnet publish --configuration Release --output bin
 ```
