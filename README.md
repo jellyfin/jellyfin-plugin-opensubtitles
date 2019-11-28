@@ -13,4 +13,4 @@ This is a plugin built with .NET that can download subtitles from https://opensu
 ```sh
 dotnet publish --configuration Release --output bin
 ```
-4. Place the resulting .dll file in a folder called ```plugins/``` under  the program data directory or inside the portable install directory
+4. Place the resulting .dll file in a folder called `plugins/` under the program data directory or inside the portable install directory
