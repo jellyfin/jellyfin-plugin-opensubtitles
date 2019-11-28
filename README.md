@@ -3,7 +3,6 @@
 
 <p align="center">
 This is a plugin built with .NET that can download subtitles from https://opensubtitles.org for your videos.
-
 </p>
 
 ## Build Process
