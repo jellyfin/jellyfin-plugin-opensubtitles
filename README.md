@@ -2,7 +2,7 @@
 <h3 align="center">Part of the <a href="https://jellyfin.org">Jellyfin Project</a></h3>
 
 <p align="center">
-This is a plugin built with .NET that can download subtitles from OpenSubtitles.org for your videos.
+This is a plugin built with .NET that can download subtitles from https://opensubtitles.org for your videos.
 
 </p>
 
