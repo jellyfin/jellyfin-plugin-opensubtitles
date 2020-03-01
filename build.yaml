@@ -1,14 +1,13 @@
 ---
 name: "jellyfin-plugin-opensubtitles"
 guid: "4b9ed42f-5185-48b5-9803-6ff2989014c4"
-version: "7" # Please increment with each pull request
-jellyfin_version: "10.3.7" # The earliest binary-compatible version
+version: "7"
+jellyfin_version: "10.3.7"
 owner: "jellyfin"
 nicename: "Open Subtitles"
 description: "Download subtitles for your media"
 overview: "Download subtitles from the internet to use with your media files."
 category: "Metadata"
-owner: "jellyfin"
 artifacts:
   - "Jellyfin.Plugin.OpenSubtitles.dll"
   - "OpenSubtitlesHandler.dll"
