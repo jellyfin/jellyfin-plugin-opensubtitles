@@ -1,16 +1,14 @@
 ---
-name: "jellyfin-plugin-opensubtitles"
+name: "Open Subtitles"
 guid: "4b9ed42f-5185-48b5-9803-6ff2989014c4"
-version: "8"
-jellyfin_version: "10.5.0"
+version: "8.0.0.0"
+jellyfin_version: "10.5.0.0"
 owner: "jellyfin"
-nicename: "Open Subtitles"
-description: "Download subtitles for your media"
-overview: "Download subtitles from the internet to use with your media files."
+overview: "Download subtitles for your media"
+description: "Download subtitles from the internet to use with your media files."
 category: "Metadata"
 artifacts:
-  - "Jellyfin.Plugin.OpenSubtitles.dll"
-  - "OpenSubtitlesHandler.dll"
-build_type: "dotnet"
-dotnet_configuration: "Release"
-dotnet_framework: "netstandard2.1"
+- "Jellyfin.Plugin.OpenSubtitles.dll"
+- "OpenSubtitlesHandler.dll"
+changelog: >
+  changelog

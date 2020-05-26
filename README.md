@@ -5,7 +5,6 @@
 This is a plugin built with .NET that can download subtitles from <a href="https://opensubtitles.org">Open Subtitles</a> for your videos.
 </p>
 
-
 ## Build Process
 
 1. Clone or download this repository
@@ -17,4 +16,5 @@ This is a plugin built with .NET that can download subtitles from <a href="https
 ```sh
 dotnet publish --configuration Release --output bin
 ```
-4. Place the resulting file in the `plugins` folder under the program data directory or inside the portable install directory
+
+4. Place the resulting file in the `plugins` folder
