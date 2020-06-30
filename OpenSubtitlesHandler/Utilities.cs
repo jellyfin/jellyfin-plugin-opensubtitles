@@ -150,14 +150,14 @@ namespace OpenSubtitlesHandler
         {
             var options = new HttpRequestOptions
             {
-                RequestContentBytes = request,
+                RequestContent = Encoding.UTF8.GetString(request),
                 RequestContentType = "text/xml",
                 UserAgent = userAgent,
                 Host = HostHeader,
                 Url = XML_RPC_SERVER,
 
                 // Response parsing will fail with this enabled
-                DecompressionMethod = CompressionMethod.None,
+                DecompressionMethod = CompressionMethods.None,
 
                 CancellationToken = cancellationToken,
                 BufferContent = false

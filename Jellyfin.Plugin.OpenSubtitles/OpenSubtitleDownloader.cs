@@ -194,7 +194,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
         public async Task<IEnumerable<RemoteSubtitleInfo>> Search(SubtitleSearchRequest request, CancellationToken cancellationToken)
         {
-            var imdbIdText = request.GetProviderId(MetadataProviders.Imdb);
+            var imdbIdText = request.GetProviderId(MetadataProvider.Imdb);
             long imdbId = 0;
 
             switch (request.ContentType)

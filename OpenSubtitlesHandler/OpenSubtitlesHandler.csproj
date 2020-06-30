@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <PackageReference Include="Jellyfin.Controller" Version="10.*" />
+    <PackageReference Include="Jellyfin.Controller" Version="10.*-*" />
   </ItemGroup>
 
   <PropertyGroup>
