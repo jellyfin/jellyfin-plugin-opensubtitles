@@ -2,7 +2,7 @@
 name: "Open Subtitles"
 guid: "4b9ed42f-5185-48b5-9803-6ff2989014c4"
 version: "8.0.0.0"
-jellyfin_version: "10.5.0.0"
+targetAbi: "10.5.0.0"
 owner: "jellyfin"
 overview: "Download subtitles for your media"
 description: "Download subtitles from the internet to use with your media files."
