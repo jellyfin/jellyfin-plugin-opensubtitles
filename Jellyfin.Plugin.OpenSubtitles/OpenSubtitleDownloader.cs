@@ -24,7 +24,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
     public class OpenSubtitleDownloader : ISubtitleProvider
     {
         private static readonly CultureInfo _usCulture = CultureInfo.ReadOnly(new CultureInfo("en-US"));
-        private readonly ILogger _logger;
+        private readonly ILogger<OpenSubtitleDownloader> _logger;
         private readonly IFileSystem _fileSystem;
         private DateTime _lastRateLimitException;
         private DateTime _lastLogin;
