@@ -24,7 +24,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
     public class OpenSubtitleDownloader : ISubtitleProvider
     {
         private static readonly CultureInfo _usCulture = CultureInfo.ReadOnly(new CultureInfo("en-US"));
-        private readonly ILogger _logger;
+        private readonly ILogger<OpenSubtitleDownloader> _logger;
         private readonly IFileSystem _fileSystem;
         private DateTime _lastRateLimitException;
         private DateTime _lastLogin;
@@ -194,7 +194,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
         public async Task<IEnumerable<RemoteSubtitleInfo>> Search(SubtitleSearchRequest request, CancellationToken cancellationToken)
         {
-            var imdbIdText = request.GetProviderId(MetadataProviders.Imdb);
+            var imdbIdText = request.GetProviderId(MetadataProvider.Imdb);
             long imdbId = 0;
 
             switch (request.ContentType)
