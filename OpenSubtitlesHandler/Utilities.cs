@@ -16,16 +16,17 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Net.Mime;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using MediaBrowser.Common.Net;
-using MediaBrowser.Model.Cryptography;
 
 namespace OpenSubtitlesHandler
 {
@@ -34,10 +35,8 @@ namespace OpenSubtitlesHandler
     /// </summary>
     public static class Utilities
     {
-        public static IHttpClient HttpClient { get; set; }
+        public static HttpClient HttpClient { get; set; }
         private const string XML_RPC_SERVER = "https://api.opensubtitles.org/xml-rpc";
-        //private const string XML_RPC_SERVER = "https://92.240.234.122/xml-rpc";
-        private const string HostHeader = "api.opensubtitles.org:443";
 
         /// <summary>
         /// Compute movie hash
@@ -148,26 +147,12 @@ namespace OpenSubtitlesHandler
 
         public static async Task<(Stream, int?, HttpStatusCode)> SendRequestAsync(byte[] request, string userAgent, CancellationToken cancellationToken)
         {
-            var options = new HttpRequestOptions
-            {
-                RequestContent = Encoding.UTF8.GetString(request),
-                RequestContentType = "text/xml",
-                UserAgent = userAgent,
-                Host = HostHeader,
-                Url = XML_RPC_SERVER,
+            var clientUserAgent = string.IsNullOrEmpty(userAgent) ? "xmlrpc-epi-php/0.2 (PHP)" : userAgent;
+            HttpClient.DefaultRequestHeaders.Add("User-Agent", clientUserAgent);
 
-                // Response parsing will fail with this enabled
-                DecompressionMethod = CompressionMethods.None,
+            var content = new StringContent(Encoding.UTF8.GetString(request), Encoding.UTF8, MediaTypeNames.Text.Xml);
 
-                CancellationToken = cancellationToken,
-                BufferContent = false
-            };
-
-            if (string.IsNullOrEmpty(options.UserAgent))
-            {
-                options.UserAgent = "xmlrpc-epi-php/0.2 (PHP)";
-            }
-            var result = await HttpClient.Post(options).ConfigureAwait(false);
+            var result = await HttpClient.PostAsync(XML_RPC_SERVER, content);
 
             IEnumerable<string> values;
             int? limit = null;
@@ -180,7 +165,7 @@ namespace OpenSubtitlesHandler
                 }
             }
 
-            return (result.Content, limit, result.StatusCode);
+            return (result.Content.ReadAsStream(), limit, result.StatusCode);
         }
     }
 }
