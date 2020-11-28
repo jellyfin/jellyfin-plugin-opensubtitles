@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -44,88 +45,47 @@ namespace OpenSubtitlesHandler
         /// <returns>The hash as Hexadecimal string</returns>
         public static string ComputeHash(Stream stream)
         {
-            byte[] hash = MovieHasher.ComputeMovieHash(stream);
-            return MovieHasher.ToHexadecimal(hash);
+            var hash = MovieHasher.ComputeMovieHash(stream);
+            return Convert.ToHexString(hash).ToLowerInvariant();
         }
 
         /// <summary>
-        /// Decompress data using GZip
+        /// Decompress data using gzip.
         /// </summary>
-        /// <param name="dataToDecompress">The stream that hold the data</param>
+        /// <param name="inputStream">The stream that hold the data</param>
         /// <returns>Bytes array of decompressed data</returns>
-        public static byte[] Decompress(Stream dataToDecompress)
+        public static byte[] Decompress(Stream inputStream)
         {
-            using (var target = new MemoryStream())
-            {
-                using (var decompressionStream = new System.IO.Compression.GZipStream(dataToDecompress, System.IO.Compression.CompressionMode.Decompress))
-                {
-                    decompressionStream.CopyTo(target);
-                }
-                return target.ToArray();
-            }
+            return RunGzip(inputStream, CompressionMode.Decompress);
         }
 
         /// <summary>
-        /// Compress data using GZip (the retunred buffer will be WITHOUT HEADER)
+        /// Compress data using gzip. Returned buffer does not have the standard gzip header.
         /// </summary>
-        /// <param name="dataToCompress">The stream that hold the data</param>
-        /// <returns>Bytes array of compressed data WITHOUT HEADER bytes</returns>
-        public static byte[] Compress(Stream dataToCompress)
+        /// <param name="inputStream">The stream that holds the data.</param>
+        /// <returns>Bytes array of compressed data without header bytes.</returns>
+        public static byte[] Compress(Stream inputStream)
         {
-            /*using (var compressed = new MemoryStream())
-            {
-                using (var compressor = new System.IO.Compression.GZipStream(compressed,
-                    System.IO.Compression.CompressionMode.Compress))
-                {
-                    dataToCompress.CopyTo(compressor);
-                }
-                // Get the compressed bytes only after closing the GZipStream
-                return compressed.ToArray();
-            }*/
-            //using (var compressedOutput = new MemoryStream())
-            //{
-            //    using (var compressedStream = new ZlibStream(compressedOutput,
-            //        Ionic.Zlib.CompressionMode.Compress,
-            //        CompressionLevel.Default, false))
-            //    {
-            //        var buffer = new byte[4096];
-            //        int byteCount;
-            //        do
-            //        {
-            //            byteCount = dataToCompress.Read(buffer, 0, buffer.Length);
+            return RunGzip(inputStream, CompressionMode.Compress);
+        }
 
-            //            if (byteCount > 0)
-            //            {
-            //                compressedStream.Write(buffer, 0, byteCount);
-            //            }
-            //        } while (byteCount > 0);
-            //    }
-            //    return compressedOutput.ToArray();
-            //}
+        private static byte[] RunGzip(Stream inputStream, CompressionMode mode)
+        {
+            using var outputStream = new MemoryStream();
+            using var decompressionStream = new GZipStream(inputStream, mode);
 
-            throw new NotImplementedException();
+            decompressionStream.CopyTo(outputStream);
+            return outputStream.ToArray();
         }
 
         /// <summary>
         /// Handle server response stream and decode it as given encoding string.
         /// </summary>
         /// <returns>The string of the stream after decode using given encoding</returns>
-        public static string GetStreamString(Stream responseStream)
+        public static string GetStreamString(Stream response)
         {
-            using (responseStream)
-            {
-                // Handle response, should be XML text.
-                var data = new List<byte>();
-                while (true)
-                {
-                    int r = responseStream.ReadByte();
-                    if (r < 0)
-                        break;
-                    data.Add((byte)r);
-                }
-                var bytes = data.ToArray();
-                return Encoding.ASCII.GetString(bytes, 0, bytes.Length);
-            }
+            var reader = new StreamReader(response, Encoding.ASCII);
+            return reader.ReadToEnd();
         }
 
         public static byte[] GetASCIIBytes(string text)
@@ -147,7 +107,7 @@ namespace OpenSubtitlesHandler
 
         public static async Task<(Stream, int?, HttpStatusCode)> SendRequestAsync(byte[] request, string userAgent, CancellationToken cancellationToken)
         {
-            var clientUserAgent = string.IsNullOrEmpty(userAgent) ? "xmlrpc-epi-php/0.2 (PHP)" : userAgent;
+            var clientUserAgent = userAgent ?? "xmlrpc-epi-php/0.2 (PHP)";
             HttpClient.DefaultRequestHeaders.Add("User-Agent", clientUserAgent);
 
             var content = new StringContent(Encoding.UTF8.GetString(request), Encoding.UTF8, MediaTypeNames.Text.Xml);
