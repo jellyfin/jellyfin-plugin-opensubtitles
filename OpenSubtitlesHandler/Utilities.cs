@@ -84,7 +84,7 @@ namespace OpenSubtitlesHandler
         /// <returns>The string of the stream after decode using given encoding</returns>
         public static string GetStreamString(Stream response)
         {
-            var reader = new StreamReader(response, Encoding.ASCII);
+            using var reader = new StreamReader(response, Encoding.ASCII);
             return reader.ReadToEnd();
         }
 
