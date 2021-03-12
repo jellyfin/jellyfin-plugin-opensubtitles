@@ -2,8 +2,22 @@
 <h3 align="center">Part of the <a href="https://jellyfin.org">Jellyfin Project</a></h3>
 
 <p align="center">
-This is a plugin built with .NET that can download subtitles from <a href="https://opensubtitles.org">Open Subtitles</a> for your videos.
+<img alt="Logo Banner" src="https://raw.githubusercontent.com/jellyfin/jellyfin-ux/master/branding/SVG/banner-logo-solid.svg?sanitize=true"/>
+<br/>
+<br/>
+<a href="https://github.com/jellyfin/jellyfin-plugin-opensubtitles/actions?query=workflow%3A%22Test+Build+Plugin%22">
+<img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/jellyfin/jellyfin-plugin-opensubtitles/Test%20Build%20Plugin.svg">
+</a>
+<a href="https://github.com/jellyfin/jellyfin-plugin-opensubtitles">
+<img alt="MIT License" src="https://img.shields.io/github/license/jellyfin/jellyfin-plugin-opensubtitles.svg"/>
+</a>
+<a href="https://github.com/jellyfin/jellyfin-plugin-opensubtitles/releases">
+<img alt="Current Release" src="https://img.shields.io/github/release/jellyfin/jellyfin-plugin-opensubtitles.svg"/>
+</a>
 </p>
+
+## About
+This is a plugin allows you to download subtitles from [Open Subtitles](https://opensubtitles.org) for your media.
 
 ## Build Process
 
@@ -16,5 +30,3 @@ This is a plugin built with .NET that can download subtitles from <a href="https
 ```sh
 dotnet publish --configuration Release --output bin
 ```
-
-4. Place the resulting file in the `plugins` folder
