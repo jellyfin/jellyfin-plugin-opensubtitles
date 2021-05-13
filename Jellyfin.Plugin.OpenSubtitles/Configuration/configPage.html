@@ -5,25 +5,23 @@
     <title>Open Subtitles</title>
 </head>
 <body>
-    <div id="OpenSubtitlesConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox">
+    <div id="OpenSubtitlesConfigPage" data-role="page" class="page type-interior pluginConfigurationPage">
         <div data-role="content">
             <div class="content-primary">
                 <form id="OpenSubtitlesConfigForm">
                     <div class="inputContainer">
-                        <label class="inputeLabel inputLabelUnfocused" for="username">Username</label>
-                        <input id="username" name="username" type="text" is="emby-input" />
+                        <input is="emby-input" type="text" id="username" label="${LabelUsername}" />
                         <div class="fieldDescription">
-                            <a is="emby-linkbutton" class="button-link emby-button" target="_blank" href="http://www.opensubtitles.org/">Register</a>
+                            <a is="emby-linkbutton" class="button-link" target="_blank" href="http://www.opensubtitles.org/">Register</a>
                         </div>
                     </div>
                     <div class="inputContainer">
-                        <label class="inputeLabel inputLabelUnfocused" for="password">Password</label>
-                        <input id="password" name="password" type="password" is="emby-input" />
+                        <input is="emby-input" type="password" id="password" label="${LabelPassword}" />
                         <div class="fieldDescription">You can utilize this plugin by editing a library and modifying the options for subtitle downloads.</div>
                     </div>
                     <div>
-                        <button is="emby-button" type="submit" class="raised button-submit block emby-button">
-                            <span>Save</span>
+                        <button is="emby-button" type="submit" class="raised button-submit block">
+                            <span>${Save}</span>
                         </button>
                     </div>
                 </form>
@@ -34,20 +32,22 @@
                 pluginUniqueId: '4b9ed42f-5185-48b5-9803-6ff2989014c4'
             };
 
-            $('#OpenSubtitlesConfigPage').on('pageshow', function () {
+            document.querySelector('#OpenSubtitlesConfigPage').addEventListener('pageshow', function () {
                 Dashboard.showLoadingMsg();
+                var page = this;
                 ApiClient.getPluginConfiguration(OpenSubtitlesConfig.pluginUniqueId).then(function (config) {
-                    $('#username').val(config.Username).change();
-                    $('#password').val(config.Password).change();
+                    page.querySelector('#username').value = config.Username || '';
+                    page.querySelector('#password').value = config.Password || '';
                     Dashboard.hideLoadingMsg();
                 });
             });
 
-            $('#OpenSubtitlesConfigForm').on('submit', function () {
+            document.querySelector('#OpenSubtitlesConfigForm').addEventListener('submit', function (e) {
                 Dashboard.showLoadingMsg();
+                var form = this;
                 ApiClient.getPluginConfiguration(OpenSubtitlesConfig.pluginUniqueId).then(function (config) {
-                    config.Username = $('#username').val();
-                    config.Password = $('#password').val();
+                    config.Username = form.querySelector('#username').value;
+                    config.Password = form.querySelector('#password').value;
                     ApiClient.updatePluginConfiguration(OpenSubtitlesConfig.pluginUniqueId, config).then(function (result) {
                         Dashboard.processPluginConfigurationUpdateResult(result);
                     });
