@@ -44,8 +44,13 @@ namespace Jellyfin.Plugin.OpenSubtitles
             {
                 new PluginPageInfo
                 {
-                    Name = this.Name,
-                    EmbeddedResourcePath = $"{GetType().Namespace}.Configuration.configPage.html"
+                    Name = "opensubtitles",
+                    EmbeddedResourcePath = GetType().Namespace + ".Web.opensubtitles.html",
+                },
+                new PluginPageInfo
+                {
+                    Name = "opensubtitlesjs",
+                    EmbeddedResourcePath = GetType().Namespace + ".Web.opensubtitles.js"
                 }
             };
         }
