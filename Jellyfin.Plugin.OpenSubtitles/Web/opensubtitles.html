@@ -1,0 +1,24 @@
+﻿<div id="OpenSubtitlesConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-controller="__plugin/opensubtitlesjs">
+
+    <div data-role="content">
+        <div class="content-primary">
+            <form id="OpenSubtitlesConfigForm">
+                <div class="inputContainer">
+                    <input is="emby-input" type="text" id="username" label="${LabelUsername}" />
+                    <div class="fieldDescription">
+                        <a is="emby-linkbutton" class="button-link" target="_blank" href="http://www.opensubtitles.org/">Register</a>
+                    </div>
+                </div>
+                <div class="inputContainer">
+                    <input is="emby-input" type="password" id="password" label="${LabelPassword}" />
+                    <div class="fieldDescription">You can utilize this plugin by editing a library and modifying the options for subtitle downloads.</div>
+                </div>
+                <div>
+                    <button is="emby-button" type="submit" class="raised button-submit block">
+                        <span>${Save}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
