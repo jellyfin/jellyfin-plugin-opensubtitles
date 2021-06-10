@@ -5,6 +5,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jellyfin.Plugin.OpenSubtitl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenSubtitlesHandler", "OpenSubtitlesHandler\OpenSubtitlesHandler.csproj", "{4F67F727-2098-49AF-8C87-40C222C96721}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RESTOpenSubtitlesHandler", "RESTOpenSubtitlesHandler\RESTOpenSubtitlesHandler.csproj", "{97CB6DB3-50A4-415F-85E2-CC12AC199299}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,5 +21,9 @@ Global
 		{4F67F727-2098-49AF-8C87-40C222C96721}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4F67F727-2098-49AF-8C87-40C222C96721}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4F67F727-2098-49AF-8C87-40C222C96721}.Release|Any CPU.Build.0 = Release|Any CPU
+		{97CB6DB3-50A4-415F-85E2-CC12AC199299}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{97CB6DB3-50A4-415F-85E2-CC12AC199299}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{97CB6DB3-50A4-415F-85E2-CC12AC199299}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{97CB6DB3-50A4-415F-85E2-CC12AC199299}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
