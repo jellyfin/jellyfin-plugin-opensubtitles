@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO.Compression;
 using System.IO;
 using System.Linq;
@@ -14,14 +15,78 @@ namespace RESTOpenSubtitlesHandler {
     public static class Util {
         private static HttpClient HttpClient { get; set; } = new HttpClient();
 
+        public static Action<string> OnHTTPUpdate = a => {};
+
+        private static string version = string.Empty;
+
+        internal static void SetVersion(string version)
+        {
+            Util.version = version;
+        }
+
+        public static readonly CultureInfo[] CultureInfos = CultureInfo.GetCultures(CultureTypes.NeutralCultures);
+
+        public static DateTime NextReset
+        {
+            get
+            {
+                // download limits get reset every day at midnight (UTC) 
+                var now = DateTime.UtcNow;
+
+                return new DateTime(now.Year, now.Month, now.Day).AddDays(1).AddMinutes(1);
+            }
+        }
+
         /// <summary>
         /// Compute movie hash
         /// </summary>
         /// <returns>The hash as Hexadecimal string</returns>
         public static string ComputeHash(Stream stream)
         {
-            var hash = MovieHasher.ComputeMovieHash(stream);
+            var hash = ComputeMovieHash(stream);
             return Convert.ToHexString(hash).ToLowerInvariant();
+        }
+
+        public static string TwoLetterToThreeLetterISO(string TwoLetterISOLanguageName)
+        {
+            if (string.IsNullOrWhiteSpace(TwoLetterISOLanguageName))
+            {
+                return null;
+            }
+
+            var ci = CultureInfos.Where(ci => string.Equals(
+                ci.TwoLetterISOLanguageName,
+                TwoLetterISOLanguageName,
+                StringComparison.OrdinalIgnoreCase)
+            ).FirstOrDefault();
+
+            if (ci == null)
+            {
+                return null;
+            }
+
+            return ci.ThreeLetterISOLanguageName;
+        }
+
+        public static string ThreeLetterToTwoLetterISO(string ThreeLetterISOLanguageName)
+        {
+            if (string.IsNullOrWhiteSpace(ThreeLetterISOLanguageName))
+            {
+                return null;
+            }
+
+            var ci = CultureInfos.Where(ci => string.Equals(
+                ci.ThreeLetterISOLanguageName,
+                ThreeLetterISOLanguageName,
+                StringComparison.OrdinalIgnoreCase)
+            ).FirstOrDefault();
+
+            if (ci == null)
+            {
+                return null;
+            }
+
+            return ci.TwoLetterISOLanguageName;
         }
 
         /// <summary>
@@ -60,17 +125,50 @@ namespace RESTOpenSubtitlesHandler {
 
         public static T Deserialize<T>(string str)
         {
-            return JsonSerializer.Deserialize<T>(str);
+            return JsonSerializer.Deserialize<T>(str, new JsonSerializerOptions { IncludeFields = true });
         }
 
-        public static bool IsOKCode(HttpStatusCode code) => (int)code < 400;
+        public static byte[] ComputeMovieHash(Stream input)
+        {
+            using (input)
+            {
+                long lhash, streamsize;
+                streamsize = input.Length;
+                lhash = streamsize;
 
-        internal static async Task<(string, int, HttpStatusCode)> SendRequestAsync(string url, HttpMethod method, string body, Dictionary<string, string> headers, CancellationToken cancellationToken)
+                long i = 0;
+                byte[] buffer = new byte[sizeof(long)];
+                while (i < 65536 / sizeof(long) && (input.Read(buffer, 0, sizeof(long)) > 0))
+                {
+                    i++;
+                    lhash += BitConverter.ToInt64(buffer, 0);
+                }
+
+                input.Position = Math.Max(0, streamsize - 65536);
+                i = 0;
+                while (i < 65536 / sizeof(long) && (input.Read(buffer, 0, sizeof(long)) > 0))
+                {
+                    i++;
+                    lhash += BitConverter.ToInt64(buffer, 0);
+                }
+                byte[] result = BitConverter.GetBytes(lhash);
+                Array.Reverse(result);
+                return result;
+            }
+        }
+
+        internal static async Task<(string, (int, int), HttpStatusCode)> SendRequestAsync(string url, HttpMethod method, string body, Dictionary<string, string> headers, CancellationToken cancellationToken)
         {
             if (!HttpClient.DefaultRequestHeaders.Contains("User-Agent"))
             {
-                System.Diagnostics.Debug.WriteLine("set ua");
-                HttpClient.DefaultRequestHeaders.Add("User-Agent", "test");
+                if (string.IsNullOrWhiteSpace(version))
+                {
+                    throw new HttpRequestException("Missing version");
+                }
+
+                var UA = "Jellyfin-OpenSubtitles-Plugin/" + version;
+                OnHTTPUpdate("Set uA to |" + UA + "|");
+                HttpClient.DefaultRequestHeaders.Add("User-Agent", UA);
             }
 
             HttpContent content = null;
@@ -79,13 +177,19 @@ namespace RESTOpenSubtitlesHandler {
                 content = new StringContent(body, Encoding.UTF8, "application/json");
             }
 
-            var request = new HttpRequestMessage {
+            var request = new HttpRequestMessage
+            {
                 Method = method,
                 RequestUri = new Uri(url),
                 Content = content
             };
-            
-            foreach (var item in headers)
+
+            if (headers == null)
+            {
+                headers = new Dictionary<string, string>();
+            }
+
+            foreach (var item in headers.OrderBy(x => x.Key))
             {
                 if (item.Key.ToLower() == "authorization")
                 {
@@ -97,25 +201,50 @@ namespace RESTOpenSubtitlesHandler {
                 }
             }
 
+            if (!request.Headers.Contains("accept"))
+            {
+                request.Headers.Add("Accept", "*/*");
+            }
+
             var result = await HttpClient.SendAsync(request, cancellationToken);
+
+            OnHTTPUpdate("received res");
+
             var res = await result.Content.ReadAsStringAsync();
 
             IEnumerable<string> values;
             int remaining = -1;
+            int reset = -1;
 
-            if (result.Headers.TryGetValues("X-RateLimit-Remaining-Second", out values) || result.Headers.TryGetValues("RateLimit-Remaining", out values))
+            if (result.Headers.TryGetValues("X-RateLimit-Remaining-Second", out values))
             {
                 var temp = values.ToList();
-                if (temp.Count > 0) {
+                if (temp.Count > 0)
+                {
                     System.Diagnostics.Debug.WriteLine("Got remaining: " + temp[0]);
 
-                    if (!int.TryParse(temp[0], out remaining)) {
+                    if (!int.TryParse(temp[0], out remaining))
+                    {
                         System.Diagnostics.Debug.WriteLine("remaining was NOT an int");
                     }
                 }
             }
 
-            return (res, remaining, result.StatusCode);
+            if (result.Headers.TryGetValues("RateLimit-Reset", out values))
+            {
+                var temp = values.ToList();
+                if (temp.Count > 0)
+                {
+                    System.Diagnostics.Debug.WriteLine("Got reset: " + temp[0]);
+
+                    if (!int.TryParse(temp[0], out reset))
+                    {
+                        System.Diagnostics.Debug.WriteLine("remaining was NOT an int");
+                    }
+                }
+            }
+
+            return (res, (remaining, reset), result.StatusCode);
         }
     }
 }

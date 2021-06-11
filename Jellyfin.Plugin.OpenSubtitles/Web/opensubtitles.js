@@ -9,6 +9,7 @@ export default function (view, params) {
         ApiClient.getPluginConfiguration(OpenSubtitlesConfig.pluginUniqueId).then(function (config) {
             page.querySelector('#username').value = config.Username || '';
             page.querySelector('#password').value = config.Password || '';
+            page.querySelector('#apikey').value = config.ApiKey || '';
             Dashboard.hideLoadingMsg();
         });
     });
@@ -20,6 +21,7 @@ export default function (view, params) {
         ApiClient.getPluginConfiguration(OpenSubtitlesConfig.pluginUniqueId).then(function (config) {
             config.Username = form.querySelector('#username').value;
             config.Password = form.querySelector('#password').value;
+            config.ApiKey = form.querySelector('#apikey').value;
             ApiClient.updatePluginConfiguration(OpenSubtitlesConfig.pluginUniqueId, config).then(function (result) {
                 Dashboard.processPluginConfigurationUpdateResult(result);
             });

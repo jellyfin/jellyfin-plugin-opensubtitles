@@ -13,23 +13,21 @@ namespace RESTOpenSubtitlesHandler {
             {
                 throw new ArgumentException("Missing param", nameof(key));
             }
+
             RequestHandler.SetApiKey(key);
         }
 
-        public static async Task<LoginInfo> LogInAsync(string username, string password, string language, CancellationToken cancellationToken)
+        public static void SetVersion(string version) => Util.SetVersion(version);
+
+        public static async Task<APIResponse<ResponseObjects.LoginInfo>> LogInAsync(string username, string password, CancellationToken cancellationToken)
         {
             var body = Util.Serialize(new { username, password });
             var response = await RequestHandler.SendRequestAsync("/login", HttpMethod.Post, body, null, cancellationToken).ConfigureAwait(false);
 
-            if (!Util.IsOKCode(response.Item2))
-            {
-                return null;
-            }
-
-            return Util.Deserialize<LoginInfo>(response.Item1);
+            return new APIResponse<ResponseObjects.LoginInfo>(response);
         }
 
-        public static async Task<bool> LogOutAsync(LoginInfo user, CancellationToken cancellationToken)
+        public static async Task<bool> LogOutAsync(ResponseObjects.LoginInfo user, CancellationToken cancellationToken)
         {
             var headers = new Dictionary<string, string>
             {
@@ -37,11 +35,23 @@ namespace RESTOpenSubtitlesHandler {
             };
 
             var response = await RequestHandler.SendRequestAsync("/logout", HttpMethod.Delete, null, headers, cancellationToken).ConfigureAwait(false);
-
-            return Util.IsOKCode(response.Item2);
+            
+            return new APIResponse<object>(response).IsOK();
         }
 
-        public static async Task<string> DownloadSubtitle(int file_id, LoginInfo user, CancellationToken cancellationToken)
+        public static async Task<APIResponse<ResponseObjects.EncapsulatedUserInfo>> GetUserInfo(ResponseObjects.LoginInfo user, CancellationToken cancellationToken)
+        {
+            var headers = new Dictionary<string, string>
+            {
+                { "Authorization", user.token }
+            };
+
+            var response = await RequestHandler.SendRequestAsync("/infos/user", HttpMethod.Get, null, headers, cancellationToken).ConfigureAwait(false);
+            
+            return new APIResponse<ResponseObjects.EncapsulatedUserInfo>(response);
+        }
+
+        public static async Task<APIResponse<string>> DownloadSubtitleAsync(int file_id, ResponseObjects.LoginInfo user, CancellationToken cancellationToken)
         {
             var headers = new Dictionary<string, string>
             {
@@ -51,12 +61,13 @@ namespace RESTOpenSubtitlesHandler {
             var body = Util.Serialize(new { file_id });
             var response = await RequestHandler.SendRequestAsync("/download", HttpMethod.Post, body, headers, cancellationToken).ConfigureAwait(false);
 
-            if (!Util.IsOKCode(response.Item2))
+            var temp = new APIResponse<ResponseObjects.SubtitleDownloadInfo>(response);
+            if (!temp.IsOK())
             {
                 return null;
             }
 
-            var info = Util.Deserialize<SubtitleDownloadInfo>(response.Item1);
+            var info = Util.Deserialize<ResponseObjects.SubtitleDownloadInfo>(response.Item1);
             var url = info.link;
 
             if (string.IsNullOrWhiteSpace(url))
@@ -64,12 +75,12 @@ namespace RESTOpenSubtitlesHandler {
                 return null;
             }
 
-            var download = await Util.SendRequestAsync(url, HttpMethod.Get, null, null, cancellationToken).ConfigureAwait(false);
+            var download = await RequestHandler.SendRequestAsync(url, HttpMethod.Get, null, null, cancellationToken).ConfigureAwait(true);
 
-            return download.Item1;
+            return new APIResponse<string>(download);
         }
 
-        public static async Task<SearchResult> SearchSubtitlesAsync(Dictionary<string, string> options, CancellationToken cancellationToken)
+        public static async Task<APIResponse<ResponseObjects.SearchResult>> SearchSubtitlesAsync(Dictionary<string, string> options, CancellationToken cancellationToken)
         {
             var opts = System.Web.HttpUtility.ParseQueryString(string.Empty);
 
@@ -82,12 +93,7 @@ namespace RESTOpenSubtitlesHandler {
 
             var response = await RequestHandler.SendRequestAsync(url, HttpMethod.Get, null, null, cancellationToken).ConfigureAwait(false);
 
-            if (!Util.IsOKCode(response.Item2))
-            {
-                return null;
-            }
-
-            return Util.Deserialize<SearchResult>(response.Item1);
+            return new APIResponse<ResponseObjects.SearchResult>(response);
         }
     }
 }

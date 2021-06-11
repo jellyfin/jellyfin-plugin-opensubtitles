@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../OpenSubtitlesHandler/OpenSubtitlesHandler.csproj" />
+    <ProjectReference Include="../RESTOpenSubtitlesHandler/RESTOpenSubtitlesHandler.csproj" />
   </ItemGroup>
 
   <ItemGroup>
