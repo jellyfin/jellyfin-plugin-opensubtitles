@@ -29,6 +29,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
         private readonly IFileSystem _fileSystem;
         private ResponseObjects.LoginInfo? _login;
         private DateTime _lastLogin;
+        private DateTime _limitReset;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OpenSubtitleDownloader"/> class.
@@ -197,7 +198,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             if (_login?.user?.remaining_downloads <= 0)
             {
-                if (Util.NextReset < DateTime.UtcNow)
+                if (_limitReset < DateTime.UtcNow)
                 {
                     // force login because the limit resets at midnight
                     _login = null;
@@ -326,6 +327,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             }
 
             _lastLogin = DateTime.UtcNow;
+            _limitReset = Util.NextReset;
         }
 
         private PluginConfiguration GetOptions()
