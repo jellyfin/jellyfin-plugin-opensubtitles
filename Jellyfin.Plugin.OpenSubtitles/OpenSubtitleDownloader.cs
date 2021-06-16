@@ -192,7 +192,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
         {
             if (string.IsNullOrWhiteSpace(id))
             {
-                throw new ArgumentException(nameof(id));
+                throw new ArgumentException("Missing id", nameof(id));
             }
 
             if (_login?.user?.remaining_downloads <= 0)
