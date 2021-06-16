@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,7 +37,7 @@ namespace RESTOpenSubtitlesHandler {
 
             var response = await RequestHandler.SendRequestAsync("/logout", HttpMethod.Delete, null, headers, cancellationToken).ConfigureAwait(false);
             
-            return new APIResponse<object>(response).IsOK();
+            return new APIResponse<object>(response).OK;
         }
 
         public static async Task<APIResponse<ResponseObjects.EncapsulatedUserInfo>> GetUserInfo(ResponseObjects.LoginInfo user, CancellationToken cancellationToken)
@@ -51,7 +52,7 @@ namespace RESTOpenSubtitlesHandler {
             return new APIResponse<ResponseObjects.EncapsulatedUserInfo>(response);
         }
 
-        public static async Task<APIResponse<string>> DownloadSubtitleAsync(int file_id, ResponseObjects.LoginInfo user, CancellationToken cancellationToken)
+        public static async Task<APIResponse<ResponseObjects.SubtitleDownloadInfo>> GetubtitleLinkAsync(int file_id, ResponseObjects.LoginInfo user, CancellationToken cancellationToken)
         {
             var headers = new Dictionary<string, string>
             {
@@ -62,14 +63,16 @@ namespace RESTOpenSubtitlesHandler {
             var response = await RequestHandler.SendRequestAsync("/download", HttpMethod.Post, body, headers, cancellationToken).ConfigureAwait(false);
 
             var temp = new APIResponse<ResponseObjects.SubtitleDownloadInfo>(response);
-            if (!temp.IsOK())
+            if (!temp.OK)
             {
                 return null;
             }
 
-            var info = Util.Deserialize<ResponseObjects.SubtitleDownloadInfo>(response.Item1);
-            var url = info.link;
+            return new APIResponse<ResponseObjects.SubtitleDownloadInfo>(response);
+        }
 
+        public static async Task<APIResponse<string>> DownloadSubtitleAsync(string url, CancellationToken cancellationToken)
+        {
             if (string.IsNullOrWhiteSpace(url))
             {
                 return null;
@@ -80,7 +83,7 @@ namespace RESTOpenSubtitlesHandler {
             return new APIResponse<string>(download);
         }
 
-        public static async Task<APIResponse<ResponseObjects.SearchResult>> SearchSubtitlesAsync(Dictionary<string, string> options, CancellationToken cancellationToken)
+        public static async Task<APIResponse<List<ResponseObjects.Data>>> SearchSubtitlesAsync(Dictionary<string, string> options, CancellationToken cancellationToken)
         {
             var opts = System.Web.HttpUtility.ParseQueryString(string.Empty);
 
@@ -89,11 +92,36 @@ namespace RESTOpenSubtitlesHandler {
                 opts.Add(item.Key, item.Value);
             }
 
-            var url = "/subtitles?" + opts.ToString();
+            var max = -1;
+            var current = 0;
 
-            var response = await RequestHandler.SendRequestAsync(url, HttpMethod.Get, null, null, cancellationToken).ConfigureAwait(false);
+            List<ResponseObjects.Data> final = new();
+            (string, (int, int), Dictionary<string, string>, HttpStatusCode) last;
 
-            return new APIResponse<ResponseObjects.SearchResult>(response);
+            do {
+                opts.Set("page", current.ToString());
+                
+                last = await RequestHandler.SendRequestAsync("/subtitles?" + opts.ToString(), HttpMethod.Get, null, null, cancellationToken).ConfigureAwait(false);
+                
+                var temp = new APIResponse<ResponseObjects.SearchResult>(last);
+
+                if (temp.data.total_pages == 0)
+                {
+                    return new APIResponse<List<ResponseObjects.Data>>((final, last.Item2, last.Item3, last.Item4));
+                }
+
+                if (max == -1)
+                {
+                    max = temp.data.total_pages;
+                }
+
+                current = int.Parse(temp.data.page) + 1;
+
+                final.AddRange(temp.data.data);
+            }
+            while (current < max);
+
+            return new APIResponse<List<ResponseObjects.Data>>((final, last.Item2, last.Item3, last.Item4));
         }
     }
 }

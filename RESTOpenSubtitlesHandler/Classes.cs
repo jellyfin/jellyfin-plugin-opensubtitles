@@ -6,23 +6,35 @@ namespace RESTOpenSubtitlesHandler {
     public class APIResponse<T>
     {
         public int code;
-        public string body;
+        public string body = string.Empty;
         public int remaining, reset;
+        public Dictionary<string, string> headers;
         public T data;
 
-        public APIResponse((string, (int, int), HttpStatusCode) obj)
+        public APIResponse((T, (int, int), Dictionary<string, string>, HttpStatusCode) obj)
         {
-            this.code = (int) obj.Item3;
-            this.body = obj.Item1;
+            this.headers = obj.Item3;
             this.remaining = obj.Item2.Item1;
             this.reset = obj.Item2.Item2;
+            this.code = (int) obj.Item4;
+            this.data = obj.Item1;
+        }
+
+        public APIResponse((string, (int, int), Dictionary<string, string>, HttpStatusCode) obj)
+        {
+            this.body = obj.Item1;
+            this.headers = obj.Item3;
+            this.remaining = obj.Item2.Item1;
+            this.reset = obj.Item2.Item2;
+            this.code = (int) obj.Item4;
 
             if (typeof(T) == typeof(string))
             {
                 this.data = (T)(object)this.body;
+                return;
             }
 
-            if (!this.IsOK())
+            if (!this.OK)
             {
                 //don't bother parsing json if HTTP status code is bad 
                 return;
@@ -38,7 +50,13 @@ namespace RESTOpenSubtitlesHandler {
             }
         }
 
-        public bool IsOK() => code < 400M;
+        public bool OK
+        {
+            get
+            {
+                return code < 400;
+            }
+        }
     }
 
     public class ResponseObjects
@@ -137,7 +155,7 @@ namespace RESTOpenSubtitlesHandler {
         {
             public int total_pages;
             public int total_count;
-            public int page;
+            public string page;
             public List<Data> data;
         }
 

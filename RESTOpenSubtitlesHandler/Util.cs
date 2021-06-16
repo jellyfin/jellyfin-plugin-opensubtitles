@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO.Compression;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -15,14 +14,9 @@ namespace RESTOpenSubtitlesHandler {
     public static class Util {
         private static HttpClient HttpClient { get; set; } = new HttpClient();
 
-        public static Action<string> OnHTTPUpdate = a => {};
+        public static Action<string> OnHTTPUpdate = _ => {};
 
         private static string version = string.Empty;
-
-        internal static void SetVersion(string version)
-        {
-            Util.version = version;
-        }
 
         public static readonly CultureInfo[] CultureInfos = CultureInfo.GetCultures(CultureTypes.NeutralCultures);
 
@@ -38,6 +32,14 @@ namespace RESTOpenSubtitlesHandler {
         }
 
         /// <summary>
+        /// Set version of plugin for the User-Agent
+        /// </summary>
+        internal static void SetVersion(string version)
+        {
+            Util.version = version;
+        }
+
+        /// <summary>
         /// Compute movie hash
         /// </summary>
         /// <returns>The hash as Hexadecimal string</returns>
@@ -47,6 +49,10 @@ namespace RESTOpenSubtitlesHandler {
             return Convert.ToHexString(hash).ToLowerInvariant();
         }
 
+        /// <summary>
+        /// Convert ISO 639-1 to ISO 639-2
+        /// </summary>
+        /// <returns>ISO 639-2 string of specified language</returns>
         public static string TwoLetterToThreeLetterISO(string TwoLetterISOLanguageName)
         {
             if (string.IsNullOrWhiteSpace(TwoLetterISOLanguageName))
@@ -68,6 +74,10 @@ namespace RESTOpenSubtitlesHandler {
             return ci.ThreeLetterISOLanguageName;
         }
 
+        /// <summary>
+        /// Convert ISO 639-2 to ISO 639-1
+        /// </summary>
+        /// <returns>ISO 639-1 string of specified language</returns>
         public static string ThreeLetterToTwoLetterISO(string ThreeLetterISOLanguageName)
         {
             if (string.IsNullOrWhiteSpace(ThreeLetterISOLanguageName))
@@ -90,44 +100,27 @@ namespace RESTOpenSubtitlesHandler {
         }
 
         /// <summary>
-        /// Decompress data using gzip.
+        /// Serialize object into JSON
         /// </summary>
-        /// <param name="inputStream">The stream that hold the data</param>
-        /// <returns>Bytes array of decompressed data</returns>
-        public static byte[] Decompress(Stream inputStream)
-        {
-            return RunGzip(inputStream, CompressionMode.Decompress);
-        }
-
-        /// <summary>
-        /// Compress data using gzip. Returned buffer does not have the standard gzip header.
-        /// </summary>
-        /// <param name="inputStream">The stream that holds the data.</param>
-        /// <returns>Bytes array of compressed data without header bytes.</returns>
-        public static byte[] Compress(Stream inputStream)
-        {
-            return RunGzip(inputStream, CompressionMode.Compress);
-        }
-
-        private static byte[] RunGzip(Stream inputStream, CompressionMode mode)
-        {
-            using var outputStream = new MemoryStream();
-            using var decompressionStream = new GZipStream(inputStream, mode);
-
-            decompressionStream.CopyTo(outputStream);
-            return outputStream.ToArray();
-        }
-
+        /// <returns>JSON string of the object</returns>
         public static string Serialize(object o)
         {
             return JsonSerializer.Serialize(o);
         }
 
+        /// <summary>
+        /// Deserialize object from JSON
+        /// </summary>
+        /// <returns>Deserialized object</returns>
         public static T Deserialize<T>(string str)
         {
             return JsonSerializer.Deserialize<T>(str, new JsonSerializerOptions { IncludeFields = true });
         }
 
+        /// <summary>
+        /// Compute hash of specified movie stream
+        /// </summary>
+        /// <returns>Hash of the movie</returns>
         public static byte[] ComputeMovieHash(Stream input)
         {
             using (input)
@@ -138,6 +131,7 @@ namespace RESTOpenSubtitlesHandler {
 
                 long i = 0;
                 byte[] buffer = new byte[sizeof(long)];
+
                 while (i < 65536 / sizeof(long) && (input.Read(buffer, 0, sizeof(long)) > 0))
                 {
                     i++;
@@ -146,18 +140,21 @@ namespace RESTOpenSubtitlesHandler {
 
                 input.Position = Math.Max(0, streamsize - 65536);
                 i = 0;
+
                 while (i < 65536 / sizeof(long) && (input.Read(buffer, 0, sizeof(long)) > 0))
                 {
                     i++;
                     lhash += BitConverter.ToInt64(buffer, 0);
                 }
+
                 byte[] result = BitConverter.GetBytes(lhash);
                 Array.Reverse(result);
+
                 return result;
             }
         }
 
-        internal static async Task<(string, (int, int), HttpStatusCode)> SendRequestAsync(string url, HttpMethod method, string body, Dictionary<string, string> headers, CancellationToken cancellationToken)
+        internal static async Task<(string, Dictionary<string, string>, HttpStatusCode)> SendRequestAsync(string url, HttpMethod method, string body, Dictionary<string, string> headers, CancellationToken cancellationToken)
         {
             if (!HttpClient.DefaultRequestHeaders.Contains("User-Agent"))
             {
@@ -166,8 +163,8 @@ namespace RESTOpenSubtitlesHandler {
                     throw new HttpRequestException("Missing version");
                 }
 
-                var UA = "Jellyfin-OpenSubtitles-Plugin/" + version;
-                OnHTTPUpdate("Set uA to |" + UA + "|");
+                var UA = "Jellyfin-Plugin-OpenSubtitles/" + version;
+
                 HttpClient.DefaultRequestHeaders.Add("User-Agent", UA);
             }
 
@@ -183,11 +180,6 @@ namespace RESTOpenSubtitlesHandler {
                 RequestUri = new Uri(url),
                 Content = content
             };
-
-            if (headers == null)
-            {
-                headers = new Dictionary<string, string>();
-            }
 
             foreach (var item in headers.OrderBy(x => x.Key))
             {
@@ -207,44 +199,10 @@ namespace RESTOpenSubtitlesHandler {
             }
 
             var result = await HttpClient.SendAsync(request, cancellationToken);
-
-            OnHTTPUpdate("received res");
-
+            var resHeaders = result.Headers.ToDictionary(a => a.Key.ToLower(), a => a.Value.First());
             var res = await result.Content.ReadAsStringAsync();
 
-            IEnumerable<string> values;
-            int remaining = -1;
-            int reset = -1;
-
-            if (result.Headers.TryGetValues("X-RateLimit-Remaining-Second", out values))
-            {
-                var temp = values.ToList();
-                if (temp.Count > 0)
-                {
-                    System.Diagnostics.Debug.WriteLine("Got remaining: " + temp[0]);
-
-                    if (!int.TryParse(temp[0], out remaining))
-                    {
-                        System.Diagnostics.Debug.WriteLine("remaining was NOT an int");
-                    }
-                }
-            }
-
-            if (result.Headers.TryGetValues("RateLimit-Reset", out values))
-            {
-                var temp = values.ToList();
-                if (temp.Count > 0)
-                {
-                    System.Diagnostics.Debug.WriteLine("Got reset: " + temp[0]);
-
-                    if (!int.TryParse(temp[0], out reset))
-                    {
-                        System.Diagnostics.Debug.WriteLine("remaining was NOT an int");
-                    }
-                }
-            }
-
-            return (res, (remaining, reset), result.StatusCode);
+            return (res, resHeaders, result.StatusCode);
         }
     }
 }

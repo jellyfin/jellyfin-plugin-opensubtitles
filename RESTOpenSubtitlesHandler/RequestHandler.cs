@@ -8,8 +8,13 @@ using System.Net.Http;
 namespace RESTOpenSubtitlesHandler {
     public static class RequestHandler {
         private static readonly string BASE_API_URL = "https://api.opensubtitles.com/api/v1";
-        private static int Remaining = -1;
-        private static int Reset = -1;
+        //header rate limits (5/1s & 240/1 min)
+        private static int HRemaining = -1;
+        private static int HReset = -1;
+        
+        //40/10s limits
+        private static DateTime WindowStart = DateTime.MinValue;
+        private static int RequestCount = 0;
         private static string ApiKey = string.Empty;
 
         public static void SetApiKey(string key)
@@ -20,7 +25,7 @@ namespace RESTOpenSubtitlesHandler {
             }
         }
 
-        public static async Task<(string, (int, int), HttpStatusCode)> SendRequestAsync(string endpoint, HttpMethod method, string body, Dictionary<string, string> headers, CancellationToken cancellationToken)
+        public static async Task<(string, (int, int), Dictionary<string, string>, HttpStatusCode)> SendRequestAsync(string endpoint, HttpMethod method, string body, Dictionary<string, string> headers, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(ApiKey))
             {
@@ -32,30 +37,67 @@ namespace RESTOpenSubtitlesHandler {
                 headers = new Dictionary<string, string>();
             }
 
-            headers.Add("Api-Key", ApiKey);
-
-            if (Remaining == 0)
+            if (!headers.ContainsKey("Api-Key"))
             {
-                await Task.Delay(1000 * Reset, cancellationToken).ConfigureAwait(false);
-                Remaining = -1;
-                Reset = -1;
+                headers.Add("Api-Key", ApiKey);
             }
 
             var url = endpoint.StartsWith("/") ? BASE_API_URL + endpoint : endpoint;
-            
+            var api = url.StartsWith(BASE_API_URL);
+
+            if (api)
+            {
+                if (HRemaining == 0)
+                {
+                    await Task.Delay(1000 * HReset, cancellationToken).ConfigureAwait(false);
+                    HRemaining = -1;
+                    HReset = -1;
+                }
+
+                if (RequestCount == 40)
+                {
+                    var diff = DateTime.UtcNow.Subtract(WindowStart).TotalSeconds;
+                    if (diff <= 10)
+                    {
+                        Util.OnHTTPUpdate("Did 40 requests in < 10s, throttling");
+                        
+                        await Task.Delay(1000 * (int)Math.Ceiling(10 - diff), cancellationToken).ConfigureAwait(false);
+                    }
+                }
+
+                if (DateTime.UtcNow.Subtract(WindowStart).TotalSeconds >= 10)
+                {
+                    WindowStart = DateTime.UtcNow;
+                    RequestCount = 0;
+                }
+            }
+
             var result = await Util.SendRequestAsync(url, method, body, headers, cancellationToken).ConfigureAwait(false);
 
-            if (result.Item2.Item1 != -1)
+            if (api)
             {
-                Remaining = result.Item2.Item1;
+                RequestCount++;
+
+                var value = "";
+                if (result.Item2.TryGetValue("x-ratelimit-remaining-second", out value))
+                {
+                    int.TryParse(value, out HRemaining);
+                }
+
+                if (result.Item2.TryGetValue("ratelimit-reset", out value))
+                {
+                    int.TryParse(value, out HReset);
+                }
+
+                if (result.Item3 == HttpStatusCode.TooManyRequests)
+                {
+                    await Task.Delay(1000 * (HReset == -1 ? 5 : HReset), cancellationToken).ConfigureAwait(false);
+
+                    return await SendRequestAsync(endpoint, method, body, headers, cancellationToken);
+                }
             }
 
-            if (result.Item2.Item2 != -1)
-            {
-                Reset = result.Item2.Item2;
-            }
-
-            return result;
+            return (result.Item1, (HRemaining, HReset), result.Item2, result.Item3);
         }
     }
 }
