@@ -254,7 +254,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             if (_login?.user != null)
             {
                 _login.user.remaining_downloads = info.data.remaining;
-                _logger.LogInformation("Remaining downloads: " + _login.user.allowed_downloads);
+                _logger.LogInformation("Remaining downloads: " + _login.user.remaining_downloads);
             }
 
             var res = await RESTOpenSubtitlesHandler.OpenSubtitles.DownloadSubtitleAsync(info.data.link, cancellationToken).ConfigureAwait(false);
