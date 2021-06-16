@@ -13,40 +13,40 @@ namespace RESTOpenSubtitlesHandler {
 
         public APIResponse((T, (int, int), Dictionary<string, string>, HttpStatusCode) obj)
         {
-            this.headers = obj.Item3;
-            this.remaining = obj.Item2.Item1;
-            this.reset = obj.Item2.Item2;
-            this.code = (int) obj.Item4;
-            this.data = obj.Item1;
+            headers = obj.Item3;
+            remaining = obj.Item2.Item1;
+            reset = obj.Item2.Item2;
+            code = (int) obj.Item4;
+            data = obj.Item1;
         }
 
         public APIResponse((string, (int, int), Dictionary<string, string>, HttpStatusCode) obj)
         {
-            this.body = obj.Item1;
-            this.headers = obj.Item3;
-            this.remaining = obj.Item2.Item1;
-            this.reset = obj.Item2.Item2;
-            this.code = (int) obj.Item4;
+            body = obj.Item1;
+            headers = obj.Item3;
+            remaining = obj.Item2.Item1;
+            reset = obj.Item2.Item2;
+            code = (int) obj.Item4;
 
             if (typeof(T) == typeof(string))
             {
-                this.data = (T)(object)this.body;
+                data = (T)(object)body;
                 return;
             }
 
-            if (!this.OK)
+            if (!OK)
             {
-                //don't bother parsing json if HTTP status code is bad 
+                // don't bother parsing json if HTTP status code is bad 
                 return;
             }
 
             try
             {
-                this.data = Util.Deserialize<T>(this.body);
+                data = Util.Deserialize<T>(body);
             }
             catch (Exception e)
             {
-                throw new Exception("Failed to parse JSON: " + e.Message + "\n\n" + this.body);
+                throw new Exception("Failed to parse JSON: " + e.Message + "\n\n" + body);
             }
         }
 
@@ -165,7 +165,7 @@ namespace RESTOpenSubtitlesHandler {
             public string file_name;
             public int requests;
             public int remaining;
-            public object message;
+            public string message;
         }
     }
 }

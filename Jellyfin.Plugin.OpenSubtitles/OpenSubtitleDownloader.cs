@@ -192,7 +192,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
         {
             if (string.IsNullOrWhiteSpace(id))
             {
-                throw new ArgumentNullException(nameof(id));
+                throw new ArgumentException(nameof(id));
             }
 
             if (_login?.user?.remaining_downloads <= 0)
@@ -204,7 +204,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 }
                 else
                 {
-                    throw new RateLimitExceededException("OpenSubtitles download count limit reached");
+                    throw new RateLimitExceededException("OpenSubtitles download limit reached");
                 }
             }
 
@@ -215,20 +215,20 @@ namespace Jellyfin.Plugin.OpenSubtitles
             var language = idParts[1];
             var ossId = idParts[2];
 
-            var file_id = int.Parse(ossId, UsCulture);
+            var fid = int.Parse(ossId, UsCulture);
 
-            var info = await RESTOpenSubtitlesHandler.OpenSubtitles.GetubtitleLinkAsync(file_id, _login, cancellationToken).ConfigureAwait(false);
+            var info = await RESTOpenSubtitlesHandler.OpenSubtitles.GetubtitleLinkAsync(fid, _login, cancellationToken).ConfigureAwait(false);
 
             if (!info.OK)
             {
-                if (info.code == 406)
+                if (info.code == 406 && info.data.remaining <= 0)
                 {
                     if (_login?.user != null)
                     {
                         _login.user.remaining_downloads = 0;
                     }
 
-                    throw new RateLimitExceededException("OpenSubtitles download count limit hit");
+                    throw new RateLimitExceededException("OpenSubtitles download limit reached");
                 }
 
                 if (info.code == 401)
@@ -240,7 +240,19 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
                 var msg = info.body.Contains("<html", StringComparison.OrdinalIgnoreCase) ? "[html]" : info.body;
 
-                throw new OpenApiException("Invalid response for file " + file_id + ": " + info.code + "\n\n" + msg);
+                msg = string.Format(
+                    CultureInfo.InvariantCulture,
+                    "Invalid response for file {0}: {1}\n\n{2}",
+                    fid,
+                    info.code,
+                    msg);
+
+                throw new OpenApiException(msg);
+            }
+
+            if (_login?.user != null)
+            {
+                _login.user.remaining_downloads = info.data.remaining;
             }
 
             var res = await RESTOpenSubtitlesHandler.OpenSubtitles.DownloadSubtitleAsync(info.data.link, cancellationToken).ConfigureAwait(false);
@@ -300,7 +312,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 options.Password,
                 cancellationToken).ConfigureAwait(false);
 
-            if (loginResponse == null)
+            if (!loginResponse.OK)
             {
                 throw new AuthenticationException("Authentication to OpenSubtitles failed.");
             }

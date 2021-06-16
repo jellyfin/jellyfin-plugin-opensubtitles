@@ -160,7 +160,7 @@ namespace RESTOpenSubtitlesHandler {
             {
                 if (string.IsNullOrWhiteSpace(version))
                 {
-                    throw new HttpRequestException("Missing version");
+                    throw new Exception("Missing plugin version");
                 }
 
                 var UA = "Jellyfin-Plugin-OpenSubtitles/" + version;
