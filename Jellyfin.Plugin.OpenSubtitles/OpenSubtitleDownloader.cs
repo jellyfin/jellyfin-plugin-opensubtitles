@@ -47,7 +47,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             RESTOpenSubtitlesHandler.OpenSubtitles.SetVersion(version);
 
-            Util.OnHTTPUpdate += str => _logger.LogInformation(str);
+            Util.OnHTTPUpdate += str => _logger.LogDebug(str);
         }
 
         /// <inheritdoc />
@@ -193,7 +193,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
         {
             if (string.IsNullOrWhiteSpace(id))
             {
-                throw new ArgumentException("Missing id", nameof(id));
+                throw new ArgumentException("Missing param", nameof(id));
             }
 
             if (_login?.user?.remaining_downloads <= 0)

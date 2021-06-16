@@ -8,14 +8,13 @@ using System.Net.Http;
 namespace RESTOpenSubtitlesHandler {
     public static class RequestHandler {
         private static readonly string BASE_API_URL = "https://api.opensubtitles.com/api/v1";
+        private static string ApiKey = string.Empty;
         // header rate limits (5/1s & 240/1 min)
         private static int HRemaining = -1;
         private static int HReset = -1;
-        
         // 40/10s limits
         private static DateTime WindowStart = DateTime.MinValue;
         private static int RequestCount = 0;
-        private static string ApiKey = string.Empty;
 
         public static void SetApiKey(string key)
         {

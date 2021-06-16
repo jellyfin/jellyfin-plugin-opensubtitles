@@ -62,12 +62,6 @@ namespace RESTOpenSubtitlesHandler {
             var body = Util.Serialize(new { file_id });
             var response = await RequestHandler.SendRequestAsync("/download", HttpMethod.Post, body, headers, cancellationToken).ConfigureAwait(false);
 
-            var temp = new APIResponse<ResponseObjects.SubtitleDownloadInfo>(response);
-            if (!temp.OK)
-            {
-                return null;
-            }
-
             return new APIResponse<ResponseObjects.SubtitleDownloadInfo>(response);
         }
 

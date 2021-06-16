@@ -12,12 +12,9 @@ using System.Threading.Tasks;
 
 namespace RESTOpenSubtitlesHandler {
     public static class Util {
-        private static HttpClient HttpClient { get; set; } = new HttpClient();
-
+        private static HttpClient HttpClient = new HttpClient();
         public static Action<string> OnHTTPUpdate = _ => {};
-
         private static string version = string.Empty;
-
         public static readonly CultureInfo[] CultureInfos = CultureInfo.GetCultures(CultureTypes.NeutralCultures);
 
         public static DateTime NextReset
@@ -31,9 +28,6 @@ namespace RESTOpenSubtitlesHandler {
             }
         }
 
-        /// <summary>
-        /// Set version of plugin for the User-Agent
-        /// </summary>
         internal static void SetVersion(string version)
         {
             Util.version = version;
@@ -181,6 +175,7 @@ namespace RESTOpenSubtitlesHandler {
                 Content = content
             };
 
+            // docs say alphabetical order improves speed
             foreach (var item in headers.OrderBy(x => x.Key))
             {
                 if (item.Key.ToLower() == "authorization")
