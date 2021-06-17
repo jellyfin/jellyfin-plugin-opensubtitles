@@ -121,6 +121,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             {
                 { "languages", subLanguageId },
                 { "moviehash", hash },
+                // API requires at least 3 letters
                 { "query", name.Length <= 2 ? string.Format(CultureInfo.InvariantCulture, "{0} - {1}", request.ProductionYear, name) : name },
                 { "type", request.ContentType == VideoContentType.Episode ? "episode" : "movie" }
             };
@@ -133,6 +134,11 @@ namespace Jellyfin.Plugin.OpenSubtitles
             else
             {
                 p.Add("imdb_id", searchImdbId);
+            }
+
+            if (request.IsPerfectMatch)
+            {
+                p.Add("moviehash_match", "only");
             }
 
             var searchResponse = await RESTOpenSubtitlesHandler.OpenSubtitles.SearchSubtitlesAsync(p, cancellationToken).ConfigureAwait(false);

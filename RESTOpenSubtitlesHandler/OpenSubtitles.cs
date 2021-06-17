@@ -90,32 +90,32 @@ namespace RESTOpenSubtitlesHandler {
             var current = 0;
 
             List<ResponseObjects.Data> final = new();
-            (string, (int, int), Dictionary<string, string>, HttpStatusCode) last;
+            APIResponse<ResponseObjects.SearchResult> last;
 
             do {
                 opts.Set("page", current.ToString());
                 
-                last = await RequestHandler.SendRequestAsync("/subtitles?" + opts.ToString(), HttpMethod.Get, null, null, cancellationToken).ConfigureAwait(false);
+                var temp = await RequestHandler.SendRequestAsync("/subtitles?" + opts.ToString(), HttpMethod.Get, null, null, cancellationToken).ConfigureAwait(false);
                 
-                var temp = new APIResponse<ResponseObjects.SearchResult>(last);
+                last = new APIResponse<ResponseObjects.SearchResult>(temp);
 
-                if (temp.data.total_pages == 0)
+                if (last.data.total_pages == 0)
                 {
-                    return new APIResponse<List<ResponseObjects.Data>>((final, last.Item2, last.Item3, last.Item4));
+                    return new APIResponse<List<ResponseObjects.Data>>((final, temp.Item2, temp.Item3, temp.Item4));
                 }
 
                 if (max == -1)
                 {
-                    max = temp.data.total_pages;
+                    max = last.data.total_pages;
                 }
 
-                current = int.Parse(temp.data.page) + 1;
+                current = int.Parse(last.data.page) + 1;
 
-                final.AddRange(temp.data.data);
+                final.AddRange(last.data.data);
             }
-            while (current < max);
+            while (current < max && last.data.data.Count == 100);
 
-            return new APIResponse<List<ResponseObjects.Data>>((final, last.Item2, last.Item3, last.Item4));
+            return new APIResponse<List<ResponseObjects.Data>>((final, (last.remaining, last.reset), last.headers, (HttpStatusCode)last.code));
         }
     }
 }
