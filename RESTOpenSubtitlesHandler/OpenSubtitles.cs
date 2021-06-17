@@ -28,18 +28,6 @@ namespace RESTOpenSubtitlesHandler {
             return new APIResponse<ResponseObjects.LoginInfo>(response);
         }
 
-        public static async Task<bool> LogOutAsync(ResponseObjects.LoginInfo user, CancellationToken cancellationToken)
-        {
-            var headers = new Dictionary<string, string>
-            {
-                { "Authorization", user.token }
-            };
-
-            var response = await RequestHandler.SendRequestAsync("/logout", HttpMethod.Delete, null, headers, cancellationToken).ConfigureAwait(false);
-            
-            return new APIResponse<object>(response).OK;
-        }
-
         public static async Task<APIResponse<ResponseObjects.EncapsulatedUserInfo>> GetUserInfo(ResponseObjects.LoginInfo user, CancellationToken cancellationToken)
         {
             var headers = new Dictionary<string, string>
@@ -67,11 +55,6 @@ namespace RESTOpenSubtitlesHandler {
 
         public static async Task<APIResponse<string>> DownloadSubtitleAsync(string url, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(url))
-            {
-                return null;
-            }
-
             var download = await RequestHandler.SendRequestAsync(url, HttpMethod.Get, null, null, cancellationToken).ConfigureAwait(true);
 
             return new APIResponse<string>(download);

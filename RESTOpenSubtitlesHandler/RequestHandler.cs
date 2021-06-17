@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RESTOpenSubtitlesHandler {
     public static class RequestHandler {
@@ -90,7 +90,7 @@ namespace RESTOpenSubtitlesHandler {
                 {
                     await Task.Delay(1000 * (HReset == -1 ? 5 : HReset), cancellationToken).ConfigureAwait(false);
 
-                    return await SendRequestAsync(endpoint, method, body, headers, cancellationToken);
+                    return await SendRequestAsync(endpoint, method, body, headers, cancellationToken).ConfigureAwait(false);
                 }
             }
 

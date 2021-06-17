@@ -263,6 +263,17 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 _logger.LogInformation("Remaining downloads: " + _login.user.remaining_downloads);
             }
 
+            if (string.IsNullOrWhiteSpace(info.data.link))
+            {
+                var msg = string.Format(
+                    CultureInfo.InvariantCulture,
+                    "Failed to obtain download link for file {0}: {1}",
+                    fid,
+                    info.code);
+
+                throw new OpenApiException(msg);
+            }
+
             var res = await RESTOpenSubtitlesHandler.OpenSubtitles.DownloadSubtitleAsync(info.data.link, cancellationToken).ConfigureAwait(false);
 
             if (!res.OK)

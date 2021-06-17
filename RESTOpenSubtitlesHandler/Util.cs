@@ -193,11 +193,11 @@ namespace RESTOpenSubtitlesHandler {
                 request.Headers.Add("Accept", "*/*");
             }
 
-            var result = await HttpClient.SendAsync(request, cancellationToken);
+            var result = await HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
             var resHeaders = result.Headers.ToDictionary(a => a.Key.ToLower(), a => a.Value.First());
-            var res = await result.Content.ReadAsStringAsync();
+            var resBody = await result.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-            return (res, resHeaders, result.StatusCode);
+            return (resBody, resHeaders, result.StatusCode);
         }
     }
 }
