@@ -58,8 +58,6 @@ namespace RESTOpenSubtitlesHandler {
                     var diff = DateTime.UtcNow.Subtract(WindowStart).TotalSeconds;
                     if (diff <= 10)
                     {
-                        Util.OnHTTPUpdate("Did 40 requests in < 10s, throttling");
-                        
                         await Task.Delay(1000 * (int)Math.Ceiling(10 - diff), cancellationToken).ConfigureAwait(false);
                     }
                 }

@@ -47,7 +47,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             RESTOpenSubtitlesHandler.OpenSubtitles.SetVersion(version);
 
-            Util.OnHTTPUpdate += str => _logger.LogDebug("[HTTP] " + str.Trim());
+            Util.OnHTTPUpdate += str => _logger.LogInformation("[HTTP] " + str.Trim());
         }
 
         /// <inheritdoc />
