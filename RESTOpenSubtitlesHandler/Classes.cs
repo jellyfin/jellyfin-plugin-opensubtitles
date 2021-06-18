@@ -127,7 +127,7 @@ namespace RESTOpenSubtitlesHandler {
             public double fps;
             public int votes;
             public int points;
-            public double ratings;
+            public float ratings;
             public bool? from_trusted;
             public bool foreign_parts_only;
             public bool auto_translation;

@@ -115,7 +115,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             }
 
             var searchImdbId = request.ContentType == VideoContentType.Movie ? imdbId.ToString(UsCulture) : string.Empty;
-            var name = request.ContentType == VideoContentType.Episode ? request.SeriesName : request.Name;
+            var name = request.ContentType == VideoContentType.Episode ? request.SeriesName : Path.GetFileName(request.MediaPath);
 
             var p = new Dictionary<string, string>
             {
@@ -166,11 +166,12 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 .OrderBy(x => x.attributes.moviehash_match ?? false)
                 .ThenByDescending(x => x.attributes.download_count)
                 .ThenByDescending(x => x.attributes.ratings)
+                .ThenByDescending(x => x.attributes.from_trusted)
                 .Select(i => new RemoteSubtitleInfo
                 {
                     Author = i.attributes.uploader.name,
                     Comment = i.attributes.comments,
-                    CommunityRating = (float)i.attributes.ratings,
+                    CommunityRating = i.attributes.ratings,
                     DownloadCount = i.attributes.download_count,
                     Format = i.attributes.format,
                     ProviderName = Name,
