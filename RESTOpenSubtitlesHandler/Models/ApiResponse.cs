@@ -36,7 +36,7 @@ namespace RESTOpenSubtitlesHandler.Models
                 return;
             }
 
-            if (!OK)
+            if (!Ok)
             {
                 // don't bother parsing json if HTTP status code is bad
                 return;
@@ -52,7 +52,7 @@ namespace RESTOpenSubtitlesHandler.Models
             }
         }
 
-        public bool OK
+        public bool Ok
         {
             get
             {

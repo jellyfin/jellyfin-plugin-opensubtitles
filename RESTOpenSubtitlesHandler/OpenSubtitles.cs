@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,7 +39,7 @@ namespace RESTOpenSubtitlesHandler
             return new ApiResponse<EncapsulatedUserInfo>(response);
         }
 
-        public static async Task<ApiResponse<SubtitleDownloadInfo>> GetubtitleLinkAsync(int file_id, LoginInfo user, CancellationToken cancellationToken)
+        public static async Task<ApiResponse<SubtitleDownloadInfo>> GetSubtitleLinkAsync(int file_id, LoginInfo user, CancellationToken cancellationToken)
         {
             var headers = new Dictionary<string, string> { { "Authorization", user.Token } };
 
@@ -76,7 +75,7 @@ namespace RESTOpenSubtitlesHandler
             {
                 opts.Set("page", current.ToString());
 
-                var response = await RequestHandler.SendRequestAsync("/subtitles?" + opts.ToString(), HttpMethod.Get, null, null, cancellationToken).ConfigureAwait(false);
+                var response = await RequestHandler.SendRequestAsync("/subtitles?" + opts, HttpMethod.Get, null, null, cancellationToken).ConfigureAwait(false);
 
                 last = new ApiResponse<SearchResult>(response);
 

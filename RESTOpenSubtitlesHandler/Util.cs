@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -15,7 +14,6 @@ namespace RESTOpenSubtitlesHandler {
         private static readonly HttpClient HttpClient = new HttpClient();
         public static Action<string> OnHttpUpdate = _ => {};
         private static string _version = string.Empty;
-        private static readonly CultureInfo[] _cultureInfos = CultureInfo.GetCultures(CultureTypes.NeutralCultures);
 
         public static DateTime NextReset
         {
@@ -41,25 +39,6 @@ namespace RESTOpenSubtitlesHandler {
         {
             var hash = ComputeMovieHash(stream);
             return Convert.ToHexString(hash).ToLowerInvariant();
-        }
-
-        /// <summary>
-        /// Convert ISO 639-1 to ISO 639-2
-        /// </summary>
-        /// <returns>ISO 639-2 string of specified language</returns>
-        public static string TwoLetterToThreeLetterIso(string TwoLetterISOLanguageName)
-        {
-            if (string.IsNullOrWhiteSpace(TwoLetterISOLanguageName))
-            {
-                return null;
-            }
-
-            var ci = _cultureInfos.FirstOrDefault(ci => string.Equals(
-                ci.TwoLetterISOLanguageName,
-                TwoLetterISOLanguageName,
-                StringComparison.OrdinalIgnoreCase));
-
-            return ci?.ThreeLetterISOLanguageName;
         }
 
         /// <summary>

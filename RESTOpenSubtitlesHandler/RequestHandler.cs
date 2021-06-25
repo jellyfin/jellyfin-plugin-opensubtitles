@@ -15,7 +15,7 @@ namespace RESTOpenSubtitlesHandler {
         private static int _hReset = -1;
         // 40/10s limits
         private static DateTime _windowStart = DateTime.MinValue;
-        private static int _requestCount = 0;
+        private static int _requestCount;
 
         public static void SetApiKey(string key)
         {
@@ -32,10 +32,7 @@ namespace RESTOpenSubtitlesHandler {
                 throw new Exception("API key has not been set up");
             }
 
-            if (headers == null)
-            {
-                headers = new Dictionary<string, string>();
-            }
+            headers ??= new Dictionary<string, string>();
 
             if (!headers.ContainsKey("Api-Key"))
             {
