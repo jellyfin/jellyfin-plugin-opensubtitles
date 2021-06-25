@@ -63,40 +63,17 @@ namespace Jellyfin.Plugin.OpenSubtitles
         /// <inheritdoc />
         public async Task<IEnumerable<RemoteSubtitleInfo>> Search(SubtitleSearchRequest request, CancellationToken cancellationToken)
         {
-            var imdbIdText = request.GetProviderId(MetadataProvider.Imdb);
-            long imdbId = 0;
+            long.TryParse(request.GetProviderId(MetadataProvider.Imdb)?.TrimStart('t') ?? string.Empty, NumberStyles.Any, _usCulture, out var imdbId);
 
             if (request == null)
             {
                 throw new ArgumentNullException(nameof(request));
             }
 
-            switch (request.ContentType)
+            if (request.ContentType == VideoContentType.Episode && (!request.IndexNumber.HasValue || !request.ParentIndexNumber.HasValue || string.IsNullOrEmpty(request.SeriesName)))
             {
-                case VideoContentType.Episode:
-                    if (!request.IndexNumber.HasValue || !request.ParentIndexNumber.HasValue || string.IsNullOrEmpty(request.SeriesName))
-                    {
-                        _logger.LogDebug("Episode information missing");
-                        return Enumerable.Empty<RemoteSubtitleInfo>();
-                    }
-
-                    break;
-                case VideoContentType.Movie:
-                    if (string.IsNullOrEmpty(request.Name))
-                    {
-                        _logger.LogDebug("Movie name missing");
-                        return Enumerable.Empty<RemoteSubtitleInfo>();
-                    }
-
-                    if (string.IsNullOrWhiteSpace(imdbIdText) || !long.TryParse(imdbIdText.TrimStart('t'), NumberStyles.Any, _usCulture, out imdbId))
-                    {
-                        _logger.LogDebug("Imdb id missing");
-                        return Enumerable.Empty<RemoteSubtitleInfo>();
-                    }
-
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(request));
+                _logger.LogDebug("Episode information missing");
+                return Enumerable.Empty<RemoteSubtitleInfo>();
             }
 
             if (string.IsNullOrEmpty(request.MediaPath))
@@ -113,26 +90,35 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 hash = Util.ComputeHash(fileStream);
             }
 
-            var searchImdbId = request.ContentType == VideoContentType.Movie ? imdbId.ToString(_usCulture) : string.Empty;
+            _logger.LogInformation(JsonSerializer.Serialize(request));
 
-            var p = new Dictionary<string, string> { { "languages", request.TwoLetterISOLanguageName }, { "moviehash", hash }, { "type", request.ContentType == VideoContentType.Episode ? "episode" : "movie" } };
+            var options = new Dictionary<string, string> { { "languages", request.TwoLetterISOLanguageName }, { "moviehash", hash }, { "type", request.ContentType == VideoContentType.Episode ? "episode" : "movie" }, };
 
-            if (request.ContentType == VideoContentType.Episode)
+            // If we have the IMDb ID we use that, otherwise query with the details
+            if (imdbId != 0)
             {
-                p.Add("season_number", request.ParentIndexNumber!.Value.ToString(_usCulture));
-                p.Add("episode_number", request.IndexNumber!.Value.ToString(_usCulture));
+                options.Add("imdb_id", imdbId.ToString(_usCulture));
             }
             else
             {
-                p.Add("imdb_id", searchImdbId);
+                if (request.ContentType == VideoContentType.Episode)
+                {
+                    options.Add("query", request.SeriesName);
+                    options.Add("season_number", request.ParentIndexNumber?.ToString(_usCulture) ?? string.Empty);
+                    options.Add("episode_number", request.IndexNumber?.ToString(_usCulture) ?? string.Empty);
+                }
+                else
+                {
+                    options.Add("query", request.Name);
+                }
             }
 
             if (request.IsPerfectMatch)
             {
-                p.Add("moviehash_match", "only");
+                options.Add("moviehash_match", "only");
             }
 
-            var searchResponse = await RESTOpenSubtitlesHandler.OpenSubtitles.SearchSubtitlesAsync(p, cancellationToken).ConfigureAwait(false);
+            var searchResponse = await RESTOpenSubtitlesHandler.OpenSubtitles.SearchSubtitlesAsync(options, cancellationToken).ConfigureAwait(false);
 
             if (!searchResponse.Ok)
             {
