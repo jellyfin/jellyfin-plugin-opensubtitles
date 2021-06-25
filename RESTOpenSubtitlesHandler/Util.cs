@@ -12,16 +12,16 @@ using System.Threading.Tasks;
 
 namespace RESTOpenSubtitlesHandler {
     public static class Util {
-        private static HttpClient HttpClient = new HttpClient();
-        public static Action<string> OnHTTPUpdate = _ => {};
-        private static string version = string.Empty;
-        public static readonly CultureInfo[] CultureInfos = CultureInfo.GetCultures(CultureTypes.NeutralCultures);
+        private static readonly HttpClient HttpClient = new HttpClient();
+        public static Action<string> OnHttpUpdate = _ => {};
+        private static string _version = string.Empty;
+        private static readonly CultureInfo[] _cultureInfos = CultureInfo.GetCultures(CultureTypes.NeutralCultures);
 
         public static DateTime NextReset
         {
             get
             {
-                // download limits get reset every day at midnight (UTC) 
+                // download limits get reset every day at midnight (UTC)
                 var now = DateTime.UtcNow;
 
                 return new DateTime(now.Year, now.Month, now.Day).AddDays(1).AddMinutes(1);
@@ -30,7 +30,7 @@ namespace RESTOpenSubtitlesHandler {
 
         internal static void SetVersion(string version)
         {
-            Util.version = version;
+            Util._version = version;
         }
 
         /// <summary>
@@ -47,50 +47,19 @@ namespace RESTOpenSubtitlesHandler {
         /// Convert ISO 639-1 to ISO 639-2
         /// </summary>
         /// <returns>ISO 639-2 string of specified language</returns>
-        public static string TwoLetterToThreeLetterISO(string TwoLetterISOLanguageName)
+        public static string TwoLetterToThreeLetterIso(string TwoLetterISOLanguageName)
         {
             if (string.IsNullOrWhiteSpace(TwoLetterISOLanguageName))
             {
                 return null;
             }
 
-            var ci = CultureInfos.Where(ci => string.Equals(
+            var ci = _cultureInfos.FirstOrDefault(ci => string.Equals(
                 ci.TwoLetterISOLanguageName,
                 TwoLetterISOLanguageName,
-                StringComparison.OrdinalIgnoreCase)
-            ).FirstOrDefault();
+                StringComparison.OrdinalIgnoreCase));
 
-            if (ci == null)
-            {
-                return null;
-            }
-
-            return ci.ThreeLetterISOLanguageName;
-        }
-
-        /// <summary>
-        /// Convert ISO 639-2 to ISO 639-1
-        /// </summary>
-        /// <returns>ISO 639-1 string of specified language</returns>
-        public static string ThreeLetterToTwoLetterISO(string ThreeLetterISOLanguageName)
-        {
-            if (string.IsNullOrWhiteSpace(ThreeLetterISOLanguageName))
-            {
-                return null;
-            }
-
-            var ci = CultureInfos.Where(ci => string.Equals(
-                ci.ThreeLetterISOLanguageName,
-                ThreeLetterISOLanguageName,
-                StringComparison.OrdinalIgnoreCase)
-            ).FirstOrDefault();
-
-            if (ci == null)
-            {
-                return null;
-            }
-
-            return ci.TwoLetterISOLanguageName;
+            return ci?.ThreeLetterISOLanguageName;
         }
 
         /// <summary>
@@ -108,20 +77,19 @@ namespace RESTOpenSubtitlesHandler {
         /// <returns>Deserialized object</returns>
         public static T Deserialize<T>(string str)
         {
-            return JsonSerializer.Deserialize<T>(str, new JsonSerializerOptions { IncludeFields = true });
+            return JsonSerializer.Deserialize<T>(str, new JsonSerializerOptions { IncludeFields = true, PropertyNamingPolicy = SnakeCaseNamingPolicy.Instance});
         }
 
         /// <summary>
         /// Compute hash of specified movie stream
         /// </summary>
         /// <returns>Hash of the movie</returns>
-        public static byte[] ComputeMovieHash(Stream input)
+        private static byte[] ComputeMovieHash(Stream input)
         {
             using (input)
             {
-                long lhash, streamsize;
-                streamsize = input.Length;
-                lhash = streamsize;
+                var streamSize = input.Length;
+                var lHash = streamSize;
 
                 long i = 0;
                 byte[] buffer = new byte[sizeof(long)];
@@ -129,19 +97,19 @@ namespace RESTOpenSubtitlesHandler {
                 while (i < 65536 / sizeof(long) && (input.Read(buffer, 0, sizeof(long)) > 0))
                 {
                     i++;
-                    lhash += BitConverter.ToInt64(buffer, 0);
+                    lHash += BitConverter.ToInt64(buffer, 0);
                 }
 
-                input.Position = Math.Max(0, streamsize - 65536);
+                input.Position = Math.Max(0, streamSize - 65536);
                 i = 0;
 
                 while (i < 65536 / sizeof(long) && (input.Read(buffer, 0, sizeof(long)) > 0))
                 {
                     i++;
-                    lhash += BitConverter.ToInt64(buffer, 0);
+                    lHash += BitConverter.ToInt64(buffer, 0);
                 }
 
-                byte[] result = BitConverter.GetBytes(lhash);
+                byte[] result = BitConverter.GetBytes(lHash);
                 Array.Reverse(result);
 
                 return result;
@@ -152,14 +120,14 @@ namespace RESTOpenSubtitlesHandler {
         {
             if (!HttpClient.DefaultRequestHeaders.Contains("User-Agent"))
             {
-                if (string.IsNullOrWhiteSpace(version))
+                if (string.IsNullOrWhiteSpace(_version))
                 {
                     throw new Exception("Missing plugin version");
                 }
 
-                var UA = "Jellyfin-Plugin-OpenSubtitles/" + version;
+                var ua = "Jellyfin-Plugin-OpenSubtitles/" + _version;
 
-                HttpClient.DefaultRequestHeaders.Add("User-Agent", UA);
+                HttpClient.DefaultRequestHeaders.Add("User-Agent", ua);
             }
 
             HttpContent content = null;
@@ -176,15 +144,15 @@ namespace RESTOpenSubtitlesHandler {
             };
 
             // docs say alphabetical order improves speed
-            foreach (var item in headers.OrderBy(x => x.Key))
+            foreach (var (key, value) in headers.OrderBy(x => x.Key))
             {
-                if (item.Key.ToLower() == "authorization")
+                if (key.ToLower() == "authorization")
                 {
-                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", item.Value);
+                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", value);
                 }
                 else
                 {
-                    request.Headers.Add(item.Key, item.Value);
+                    request.Headers.Add(key, value);
                 }
             }
 
@@ -195,7 +163,7 @@ namespace RESTOpenSubtitlesHandler {
 
             var result = await HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
             var resHeaders = result.Headers.ToDictionary(a => a.Key.ToLower(), a => a.Value.First());
-            var resBody = await result.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var resBody = await result.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
             return (resBody, resHeaders, result.StatusCode);
         }
