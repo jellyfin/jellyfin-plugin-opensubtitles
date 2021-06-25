@@ -129,8 +129,6 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             if (request.IsPerfectMatch)
             {
-                var name = request.ContentType == VideoContentType.Episode ? request.SeriesName : Path.GetFileNameWithoutExtension(request.MediaPath);
-                p.Add("query", name.Length <= 2 ? string.Format(CultureInfo.InvariantCulture, "{0} - {1}", request.ProductionYear, name) : name);
                 p.Add("moviehash_match", "only");
             }
 
