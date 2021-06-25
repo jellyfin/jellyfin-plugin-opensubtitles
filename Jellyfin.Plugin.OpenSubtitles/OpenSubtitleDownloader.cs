@@ -90,8 +90,6 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 hash = Util.ComputeHash(fileStream);
             }
 
-            _logger.LogInformation(JsonSerializer.Serialize(request));
-
             var options = new Dictionary<string, string> { { "languages", request.TwoLetterISOLanguageName }, { "moviehash", hash }, { "type", request.ContentType == VideoContentType.Episode ? "episode" : "movie" }, };
 
             // If we have the IMDb ID we use that, otherwise query with the details
