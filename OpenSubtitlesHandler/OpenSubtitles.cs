@@ -20,12 +20,24 @@ namespace OpenSubtitlesHandler {
 
         public static void SetVersion(string version) => Util.SetVersion(version);
 
-        public static async Task<APIResponse<ResponseObjects.LoginInfo>> LogInAsync(string username, string password, CancellationToken cancellationToken)
+        public static async Task<APIResponse<ResponseObjects.LoginInfo>> LogInAsync(string username, string password, string apiKey, CancellationToken cancellationToken)
         {
             var body = Util.Serialize(new { username, password });
-            var response = await RequestHandler.SendRequestAsync("/login", HttpMethod.Post, body, null, cancellationToken).ConfigureAwait(false);
+            var response = await RequestHandler.SendRequestAsync("/login", HttpMethod.Post, body, null, apiKey, cancellationToken).ConfigureAwait(false);
 
             return new APIResponse<ResponseObjects.LoginInfo>(response);
+        }
+
+        public static async Task<bool> LogOutAsync(ResponseObjects.LoginInfo user, string apiKey, CancellationToken cancellationToken)
+        {
+            var headers = new Dictionary<string, string>
+            {
+                { "Authorization", user.token }
+            };
+
+            var response = await RequestHandler.SendRequestAsync("/logout", HttpMethod.Delete, null, headers, apiKey, cancellationToken).ConfigureAwait(false);
+
+            return new APIResponse<object>(response).OK;
         }
 
         public static async Task<APIResponse<ResponseObjects.EncapsulatedUserInfo>> GetUserInfo(ResponseObjects.LoginInfo user, CancellationToken cancellationToken)
@@ -35,7 +47,7 @@ namespace OpenSubtitlesHandler {
                 { "Authorization", user.token }
             };
 
-            var response = await RequestHandler.SendRequestAsync("/infos/user", HttpMethod.Get, null, headers, cancellationToken).ConfigureAwait(false);
+            var response = await RequestHandler.SendRequestAsync("/infos/user", HttpMethod.Get, null, headers, null, cancellationToken).ConfigureAwait(false);
             
             return new APIResponse<ResponseObjects.EncapsulatedUserInfo>(response);
         }
@@ -48,14 +60,14 @@ namespace OpenSubtitlesHandler {
             };
 
             var body = Util.Serialize(new { file_id });
-            var response = await RequestHandler.SendRequestAsync("/download", HttpMethod.Post, body, headers, cancellationToken).ConfigureAwait(false);
+            var response = await RequestHandler.SendRequestAsync("/download", HttpMethod.Post, body, headers, null, cancellationToken).ConfigureAwait(false);
 
             return new APIResponse<ResponseObjects.SubtitleDownloadInfo>(response);
         }
 
         public static async Task<APIResponse<string>> DownloadSubtitleAsync(string url, CancellationToken cancellationToken)
         {
-            var download = await RequestHandler.SendRequestAsync(url, HttpMethod.Get, null, null, cancellationToken).ConfigureAwait(true);
+            var download = await RequestHandler.SendRequestAsync(url, HttpMethod.Get, null, null, null, cancellationToken).ConfigureAwait(true);
 
             return new APIResponse<string>(download);
         }
@@ -78,7 +90,7 @@ namespace OpenSubtitlesHandler {
             do {
                 opts.Set("page", current.ToString());
                 
-                var temp = await RequestHandler.SendRequestAsync("/subtitles?" + opts.ToString(), HttpMethod.Get, null, null, cancellationToken).ConfigureAwait(false);
+                var temp = await RequestHandler.SendRequestAsync("/subtitles?" + opts.ToString(), HttpMethod.Get, null, null, null, cancellationToken).ConfigureAwait(false);
                 
                 last = new APIResponse<ResponseObjects.SearchResult>(temp);
 

@@ -184,7 +184,8 @@ namespace Jellyfin.Plugin.OpenSubtitles
                     DateCreated = i.attributes.upload_date,
                     IsHashMatch = i.attributes.moviehash_match
                 })
-                .Where(i => !string.Equals(i.Format, "sub", StringComparison.OrdinalIgnoreCase) && !string.Equals(i.Format, "idx", StringComparison.OrdinalIgnoreCase));
+                .Where(i => !string.Equals(i.Format, "sub", StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(i.Format, "idx", StringComparison.OrdinalIgnoreCase));
 
             /*if (temp.Any())
             {
@@ -324,6 +325,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             var loginResponse = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(
                 options.Username,
                 options.Password,
+                null,
                 cancellationToken).ConfigureAwait(false);
 
             if (!loginResponse.OK)

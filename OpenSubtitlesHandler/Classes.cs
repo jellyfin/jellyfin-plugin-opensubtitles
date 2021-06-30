@@ -3,6 +3,18 @@ using System.Collections.Generic;
 using System.Net;
 
 namespace OpenSubtitlesHandler {
+    public class LoginInfo
+    {
+        public string Username { get; set; }
+        public string Password { get; set; }
+        public string ApiKey { get; set; }
+    }
+
+    public class ErrorResponse
+    {
+        public string message { get; set; }
+    }
+
     public class APIResponse<T>
     {
         public int code;

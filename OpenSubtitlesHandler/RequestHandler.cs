@@ -24,9 +24,11 @@ namespace OpenSubtitlesHandler {
             }
         }
 
-        public static async Task<(string, (int, int), Dictionary<string, string>, HttpStatusCode)> SendRequestAsync(string endpoint, HttpMethod method, string body, Dictionary<string, string> headers, CancellationToken cancellationToken)
+        public static async Task<(string, (int, int), Dictionary<string, string>, HttpStatusCode)> SendRequestAsync(string endpoint, HttpMethod method, string body, Dictionary<string, string> headers, string apiKey, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(ApiKey))
+            var key = !string.IsNullOrWhiteSpace(ApiKey) ? ApiKey : apiKey;
+
+            if (string.IsNullOrWhiteSpace(key))
             {
                 throw new Exception("API key has not been set up");
             }
@@ -38,7 +40,7 @@ namespace OpenSubtitlesHandler {
 
             if (!headers.ContainsKey("Api-Key"))
             {
-                headers.Add("Api-Key", ApiKey);
+                headers.Add("Api-Key", key);
             }
 
             var url = endpoint.StartsWith("/") ? BASE_API_URL + endpoint : endpoint;
@@ -92,7 +94,7 @@ namespace OpenSubtitlesHandler {
 
                     await Task.Delay(1000 * (HReset == -1 ? 5 : HReset), cancellationToken).ConfigureAwait(false);
 
-                    return await SendRequestAsync(endpoint, method, body, headers, cancellationToken).ConfigureAwait(false);
+                    return await SendRequestAsync(endpoint, method, body, headers, key, cancellationToken).ConfigureAwait(false);
                 }
             }
 
