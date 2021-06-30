@@ -5,7 +5,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace RESTOpenSubtitlesHandler {
+namespace OpenSubtitlesHandler {
     public static class RequestHandler {
         private static readonly string BASE_API_URL = "https://api.opensubtitles.com/api/v1";
         private static string ApiKey = string.Empty;
@@ -88,6 +88,8 @@ namespace RESTOpenSubtitlesHandler {
 
                 if (result.Item3 == HttpStatusCode.TooManyRequests)
                 {
+                    Util.OnHTTPUpdate("Too many requests: " + url);
+
                     await Task.Delay(1000 * (HReset == -1 ? 5 : HReset), cancellationToken).ConfigureAwait(false);
 
                     return await SendRequestAsync(endpoint, method, body, headers, cancellationToken).ConfigureAwait(false);

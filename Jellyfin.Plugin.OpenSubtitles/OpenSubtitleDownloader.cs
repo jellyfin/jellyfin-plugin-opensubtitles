@@ -15,7 +15,7 @@ using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.IO;
 using MediaBrowser.Model.Providers;
 using Microsoft.Extensions.Logging;
-using RESTOpenSubtitlesHandler;
+using OpenSubtitlesHandler;
 
 namespace Jellyfin.Plugin.OpenSubtitles
 {
@@ -45,7 +45,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             var version = System.Reflection.Assembly.GetExecutingAssembly()?.GetName()?.Version?.ToString();
 
-            RESTOpenSubtitlesHandler.OpenSubtitles.SetVersion(version);
+            OpenSubtitlesHandler.OpenSubtitles.SetVersion(version);
 
             Util.OnHTTPUpdate += str => _logger.LogInformation("[HTTP] " + str.Trim());
         }
@@ -141,7 +141,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 p.Add("moviehash_match", "only");
             }
 
-            var searchResponse = await RESTOpenSubtitlesHandler.OpenSubtitles.SearchSubtitlesAsync(p, cancellationToken).ConfigureAwait(false);
+            var searchResponse = await OpenSubtitlesHandler.OpenSubtitles.SearchSubtitlesAsync(p, cancellationToken).ConfigureAwait(false);
 
             if (!searchResponse.OK)
             {
@@ -153,7 +153,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 return Enumerable.Empty<RemoteSubtitleInfo>();
             }
 
-            Predicate<RESTOpenSubtitlesHandler.ResponseObjects.Data> mediaFilter =
+            Predicate<OpenSubtitlesHandler.ResponseObjects.Data> mediaFilter =
                 x => x.attributes.feature_details.feature_type == (request.ContentType == VideoContentType.Episode ? "Episode" : "Movie") &&
                     request.ContentType == VideoContentType.Episode
                         ? x.attributes.feature_details.season_number == request.ParentIndexNumber &&
@@ -225,7 +225,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             var fid = int.Parse(ossId, UsCulture);
 
-            var info = await RESTOpenSubtitlesHandler.OpenSubtitles.GetubtitleLinkAsync(fid, _login, cancellationToken).ConfigureAwait(false);
+            var info = await OpenSubtitlesHandler.OpenSubtitles.GetubtitleLinkAsync(fid, _login, cancellationToken).ConfigureAwait(false);
 
             if (!info.OK)
             {
@@ -275,7 +275,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 throw new OpenApiException(msg);
             }
 
-            var res = await RESTOpenSubtitlesHandler.OpenSubtitles.DownloadSubtitleAsync(info.data.link, cancellationToken).ConfigureAwait(false);
+            var res = await OpenSubtitlesHandler.OpenSubtitles.DownloadSubtitleAsync(info.data.link, cancellationToken).ConfigureAwait(false);
 
             if (!res.OK)
             {
@@ -302,7 +302,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             var key = GetOptions().ApiKey;
             if (!string.IsNullOrWhiteSpace(key))
             {
-                RESTOpenSubtitlesHandler.OpenSubtitles.SetToken(key);
+                OpenSubtitlesHandler.OpenSubtitles.SetToken(key);
             }
 
             if (_login != null)
@@ -321,7 +321,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 return;
             }
 
-            var loginResponse = await RESTOpenSubtitlesHandler.OpenSubtitles.LogInAsync(
+            var loginResponse = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(
                 options.Username,
                 options.Password,
                 cancellationToken).ConfigureAwait(false);
@@ -333,7 +333,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             _login = loginResponse.data;
 
-            var infoResponse = await RESTOpenSubtitlesHandler.OpenSubtitles.GetUserInfo(_login, cancellationToken).ConfigureAwait(false);
+            var infoResponse = await OpenSubtitlesHandler.OpenSubtitles.GetUserInfo(_login, cancellationToken).ConfigureAwait(false);
             if (infoResponse.OK)
             {
                 _login.user = infoResponse.data.data;

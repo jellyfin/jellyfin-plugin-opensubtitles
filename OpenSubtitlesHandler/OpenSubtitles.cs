@@ -5,7 +5,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace RESTOpenSubtitlesHandler {
+namespace OpenSubtitlesHandler {
     public static class OpenSubtitles
     {
         public static void SetToken(string key)

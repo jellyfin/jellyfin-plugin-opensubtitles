@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 
-namespace RESTOpenSubtitlesHandler {
+namespace OpenSubtitlesHandler {
     public class APIResponse<T>
     {
         public int code;
