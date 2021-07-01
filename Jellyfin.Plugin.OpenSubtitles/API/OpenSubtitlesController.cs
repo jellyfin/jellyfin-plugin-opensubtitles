@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenSubtitlesHandler;
 
-namespace Jellyfin.Plugin.KodiSyncQueue.API
+namespace Jellyfin.Plugin.OpenSubtitles.API
 {
     /// <summary>
     /// The open subtitles plugin controller.
@@ -57,7 +57,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             {
                 var msg = response.code + " - " + (response.body.Length < 150 ? response.body : string.Empty);
 
-                if (response.body.Contains("message\":", StringComparison.OrdinalIgnoreCase))
+                if (response.body.Contains("message\":", StringComparison.Ordinal))
                 {
                     var err = Util.Deserialize<ErrorResponse>(response.body);
                     msg = err.message == "You cannot consume this service" ? "Invalid API key provided" : err.message;
