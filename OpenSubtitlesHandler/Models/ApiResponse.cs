@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 
-namespace RESTOpenSubtitlesHandler.Models
+namespace OpenSubtitlesHandler.Models
 {
     public class ApiResponse<T>
     {

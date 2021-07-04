@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../RESTOpenSubtitlesHandler/RESTOpenSubtitlesHandler.csproj" />
+    <ProjectReference Include="../OpenSubtitlesHandler/OpenSubtitlesHandler.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,6 +26,7 @@
     <PackageReference Include="Jellyfin.Common" Version="10.*-*" />
     <PackageReference Include="Jellyfin.Controller" Version="10.*-*" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="5.0.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.1.4" />
   </ItemGroup>
 
   <ItemGroup>

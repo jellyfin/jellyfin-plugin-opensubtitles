@@ -1,4 +1,4 @@
-﻿namespace RESTOpenSubtitlesHandler.Models.Responses
+﻿namespace OpenSubtitlesHandler.Models.Responses
 {
     public class LoginInfo
     {

@@ -5,7 +5,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace RESTOpenSubtitlesHandler {
+namespace OpenSubtitlesHandler {
     public static class RequestHandler {
         private const string BaseApiUrl = "https://api.opensubtitles.com/api/v1";
 
@@ -25,9 +25,11 @@ namespace RESTOpenSubtitlesHandler {
             }
         }
 
-        public static async Task<(string response, (int remaining, int reset) limits, Dictionary<string, string> headers, HttpStatusCode statusCode)> SendRequestAsync(string endpoint, HttpMethod method, string body, Dictionary<string, string> headers, CancellationToken cancellationToken)
+        public static async Task<(string response, (int remaining, int reset) limits, Dictionary<string, string> headers, HttpStatusCode statusCode)> SendRequestAsync(string endpoint, HttpMethod method, string body, Dictionary<string, string> headers, string apiKey, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(_apiKey))
+            var key = !string.IsNullOrWhiteSpace(_apiKey) ? _apiKey : apiKey;
+
+            if (string.IsNullOrWhiteSpace(key))
             {
                 throw new Exception("API key has not been set up");
             }
@@ -93,8 +95,7 @@ namespace RESTOpenSubtitlesHandler {
 
             await Task.Delay(1000 * (_hReset == -1 ? 5 : _hReset), cancellationToken).ConfigureAwait(false);
 
-            return await SendRequestAsync(endpoint, method, body, headers, cancellationToken).ConfigureAwait(false);
-
+            return await SendRequestAsync(endpoint, method, body, headers, key, cancellationToken).ConfigureAwait(false);
         }
     }
 }

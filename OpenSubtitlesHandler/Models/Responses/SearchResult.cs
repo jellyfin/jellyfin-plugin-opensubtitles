@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace RESTOpenSubtitlesHandler.Models.Responses
+namespace OpenSubtitlesHandler.Models.Responses
 {
     public class SearchResult
     {

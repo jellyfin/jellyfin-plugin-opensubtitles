@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using System.Text.Json;
 
-namespace RESTOpenSubtitlesHandler
+namespace OpenSubtitlesHandler
 {
     public class SnakeCaseNamingPolicy : JsonNamingPolicy
     {
