@@ -101,13 +101,13 @@ namespace Jellyfin.Plugin.OpenSubtitles
             {
                 if (request.ContentType == VideoContentType.Episode)
                 {
-                    options.Add("query", request.SeriesName);
+                    options.Add("query", request.SeriesName.Length <= 2 ? $"{request.SeriesName} {request.ProductionYear}" : request.SeriesName);
                     options.Add("season_number", request.ParentIndexNumber?.ToString(_usCulture) ?? string.Empty);
                     options.Add("episode_number", request.IndexNumber?.ToString(_usCulture) ?? string.Empty);
                 }
                 else
                 {
-                    options.Add("query", request.Name);
+                    options.Add("query", request.Name.Length <= 2 ? $"{request.Name} {request.ProductionYear}" : request.Name);
                 }
             }
 
