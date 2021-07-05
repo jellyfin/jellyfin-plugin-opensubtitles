@@ -7,98 +7,95 @@ using System.Threading.Tasks;
 
 namespace OpenSubtitlesHandler {
     public static class RequestHandler {
-        private static readonly string BASE_API_URL = "https://api.opensubtitles.com/api/v1";
-        private static string ApiKey = string.Empty;
+        private const string BaseApiUrl = "https://api.opensubtitles.com/api/v1";
+
+        private static string _apiKey = string.Empty;
         // header rate limits (5/1s & 240/1 min)
-        private static int HRemaining = -1;
-        private static int HReset = -1;
+        private static int _hRemaining = -1;
+        private static int _hReset = -1;
         // 40/10s limits
-        private static DateTime WindowStart = DateTime.MinValue;
-        private static int RequestCount = 0;
+        private static DateTime _windowStart = DateTime.MinValue;
+        private static int _requestCount;
 
         public static void SetApiKey(string key)
         {
-            if (ApiKey == string.Empty)
+            if (_apiKey == string.Empty)
             {
-                ApiKey = key;
+                _apiKey = key;
             }
         }
 
-        public static async Task<(string, (int, int), Dictionary<string, string>, HttpStatusCode)> SendRequestAsync(string endpoint, HttpMethod method, string body, Dictionary<string, string> headers, string apiKey, CancellationToken cancellationToken)
+        public static async Task<(string response, (int remaining, int reset) limits, Dictionary<string, string> headers, HttpStatusCode statusCode)> SendRequestAsync(string endpoint, HttpMethod method, string body, Dictionary<string, string> headers, string apiKey, CancellationToken cancellationToken)
         {
-            var key = !string.IsNullOrWhiteSpace(ApiKey) ? ApiKey : apiKey;
+            var key = !string.IsNullOrWhiteSpace(_apiKey) ? _apiKey : apiKey;
 
             if (string.IsNullOrWhiteSpace(key))
             {
                 throw new Exception("API key has not been set up");
             }
 
-            if (headers == null)
-            {
-                headers = new Dictionary<string, string>();
-            }
+            headers ??= new Dictionary<string, string>();
 
             if (!headers.ContainsKey("Api-Key"))
             {
-                headers.Add("Api-Key", key);
+                headers.Add("Api-Key", _apiKey);
             }
 
-            var url = endpoint.StartsWith("/") ? BASE_API_URL + endpoint : endpoint;
-            var api = url.StartsWith(BASE_API_URL);
+            var url = endpoint.StartsWith("/") ? BaseApiUrl + endpoint : endpoint;
+            var api = url.StartsWith(BaseApiUrl);
 
             if (api)
             {
-                if (HRemaining == 0)
+                if (_hRemaining == 0)
                 {
-                    await Task.Delay(1000 * HReset, cancellationToken).ConfigureAwait(false);
-                    HRemaining = -1;
-                    HReset = -1;
+                    await Task.Delay(1000 * _hReset, cancellationToken).ConfigureAwait(false);
+                    _hRemaining = -1;
+                    _hReset = -1;
                 }
 
-                if (RequestCount == 40)
+                if (_requestCount == 40)
                 {
-                    var diff = DateTime.UtcNow.Subtract(WindowStart).TotalSeconds;
+                    var diff = DateTime.UtcNow.Subtract(_windowStart).TotalSeconds;
                     if (diff <= 10)
                     {
                         await Task.Delay(1000 * (int)Math.Ceiling(10 - diff), cancellationToken).ConfigureAwait(false);
                     }
                 }
 
-                if (DateTime.UtcNow.Subtract(WindowStart).TotalSeconds >= 10)
+                if (DateTime.UtcNow.Subtract(_windowStart).TotalSeconds >= 10)
                 {
-                    WindowStart = DateTime.UtcNow;
-                    RequestCount = 0;
+                    _windowStart = DateTime.UtcNow;
+                    _requestCount = 0;
                 }
             }
 
-            var result = await Util.SendRequestAsync(url, method, body, headers, cancellationToken).ConfigureAwait(false);
+            var (response, responseHeaders, httpStatusCode) = await Util.SendRequestAsync(url, method, body, headers, cancellationToken).ConfigureAwait(false);
 
-            if (api)
+            if (!api)
             {
-                RequestCount++;
-
-                var value = "";
-                if (result.Item2.TryGetValue("x-ratelimit-remaining-second", out value))
-                {
-                    int.TryParse(value, out HRemaining);
-                }
-
-                if (result.Item2.TryGetValue("ratelimit-reset", out value))
-                {
-                    int.TryParse(value, out HReset);
-                }
-
-                if (result.Item3 == HttpStatusCode.TooManyRequests)
-                {
-                    Util.OnHTTPUpdate("Too many requests: " + url);
-
-                    await Task.Delay(1000 * (HReset == -1 ? 5 : HReset), cancellationToken).ConfigureAwait(false);
-
-                    return await SendRequestAsync(endpoint, method, body, headers, key, cancellationToken).ConfigureAwait(false);
-                }
+                return (response, (_hRemaining, _hReset), responseHeaders, httpStatusCode);
             }
 
-            return (result.Item1, (HRemaining, HReset), result.Item2, result.Item3);
+            _requestCount++;
+
+            if (responseHeaders.TryGetValue("x-ratelimit-remaining-second", out var value))
+            {
+                int.TryParse(value, out _hRemaining);
+            }
+
+            if (responseHeaders.TryGetValue("ratelimit-reset", out value))
+            {
+                int.TryParse(value, out _hReset);
+            }
+
+            if (httpStatusCode != HttpStatusCode.TooManyRequests)
+            {
+                return (response, (_hRemaining, _hReset), responseHeaders, httpStatusCode);
+            }
+
+            await Task.Delay(1000 * (_hReset == -1 ? 5 : _hReset), cancellationToken).ConfigureAwait(false);
+
+            return await SendRequestAsync(endpoint, method, body, headers, key, cancellationToken).ConfigureAwait(false);
         }
     }
 }

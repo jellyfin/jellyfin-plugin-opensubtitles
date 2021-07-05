@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenSubtitlesHandler;
+using OpenSubtitlesHandler.Models;
+using OpenSubtitlesHandler.Models.Responses;
 
 namespace Jellyfin.Plugin.OpenSubtitles.API
 {
@@ -34,7 +36,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.API
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult> ValidateLoginInfo([FromBody] LoginInfo body, CancellationToken token)
+        public async Task<ActionResult> ValidateLoginInfo([FromBody] LoginInfoInput body, CancellationToken token)
         {
             if (string.IsNullOrWhiteSpace(body.Username))
             {
@@ -53,22 +55,22 @@ namespace Jellyfin.Plugin.OpenSubtitles.API
 
             var response = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(body.Username, body.Password, body.ApiKey, token).ConfigureAwait(false);
 
-            if (!response.OK)
+            if (!response.Ok)
             {
-                var msg = response.code + " - " + (response.body.Length < 150 ? response.body : string.Empty);
+                var msg = response.Code + " - " + (response.Body.Length < 150 ? response.Body : string.Empty);
 
-                if (response.body.Contains("message\":", StringComparison.Ordinal))
+                if (response.Body.Contains("message\":", StringComparison.Ordinal))
                 {
-                    var err = Util.Deserialize<ErrorResponse>(response.body);
-                    msg = err.message == "You cannot consume this service" ? "Invalid API key provided" : err.message;
+                    var err = Util.Deserialize<ErrorResponse>(response.Body);
+                    msg = err.Message == "You cannot consume this service" ? "Invalid API key provided" : err.Message;
                 }
 
                 return Unauthorized(new { Message = msg });
             }
 
-            await OpenSubtitlesHandler.OpenSubtitles.LogOutAsync(response.data, body.ApiKey, token).ConfigureAwait(false);
+            await OpenSubtitlesHandler.OpenSubtitles.LogOutAsync(response.Data, body.ApiKey, token).ConfigureAwait(false);
 
-            return Ok(new { Downloads = response.data.user.allowed_downloads });
+            return Ok(new { Downloads = response.Data.User.AllowedDownloads });
         }
     }
 }
