@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 using OpenSubtitlesHandler.Models;
 using OpenSubtitlesHandler.Models.Responses;
 
-namespace OpenSubtitlesHandler {
+namespace OpenSubtitlesHandler
+{
     public static class OpenSubtitles
     {
         public static void SetToken(string key)

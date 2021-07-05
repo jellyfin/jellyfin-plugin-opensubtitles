@@ -9,8 +9,10 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace OpenSubtitlesHandler {
-    public static class Util {
+namespace OpenSubtitlesHandler
+{
+    public static class Util
+    {
         private static readonly HttpClient HttpClient = new HttpClient();
         public static Action<string> OnHttpUpdate = _ => {};
         private static string _version = string.Empty;

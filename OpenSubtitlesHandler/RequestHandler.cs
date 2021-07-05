@@ -5,8 +5,10 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace OpenSubtitlesHandler {
-    public static class RequestHandler {
+namespace OpenSubtitlesHandler
+{
+    public static class RequestHandler
+    {
         private const string BaseApiUrl = "https://api.opensubtitles.com/api/v1";
 
         private static string _apiKey = string.Empty;
@@ -27,7 +29,7 @@ namespace OpenSubtitlesHandler {
 
         public static async Task<(string response, (int remaining, int reset) limits, Dictionary<string, string> headers, HttpStatusCode statusCode)> SendRequestAsync(string endpoint, HttpMethod method, string body, Dictionary<string, string> headers, string apiKey, CancellationToken cancellationToken)
         {
-            var key = !string.IsNullOrWhiteSpace(_apiKey) ? _apiKey : apiKey;
+            var key = !string.IsNullOrWhiteSpace(apiKey) ? apiKey : _apiKey;
 
             if (string.IsNullOrWhiteSpace(key))
             {
@@ -38,7 +40,7 @@ namespace OpenSubtitlesHandler {
 
             if (!headers.ContainsKey("Api-Key"))
             {
-                headers.Add("Api-Key", _apiKey);
+                headers.Add("Api-Key", key);
             }
 
             var url = endpoint.StartsWith("/") ? BaseApiUrl + endpoint : endpoint;
@@ -59,6 +61,8 @@ namespace OpenSubtitlesHandler {
                     if (diff <= 10)
                     {
                         await Task.Delay(1000 * (int)Math.Ceiling(10 - diff), cancellationToken).ConfigureAwait(false);
+                        _hRemaining = -1;
+                        _hReset = -1;
                     }
                 }
 
