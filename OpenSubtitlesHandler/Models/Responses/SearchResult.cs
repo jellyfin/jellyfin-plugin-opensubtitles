@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text.Json;
 
 namespace OpenSubtitlesHandler.Models.Responses
 {
@@ -6,7 +7,7 @@ namespace OpenSubtitlesHandler.Models.Responses
     {
         public int TotalPages;
         public int TotalCount;
-        public string Page;
+        public JsonElement Page;
         public List<Data> Data;
     }
 }
