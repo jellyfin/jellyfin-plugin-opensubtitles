@@ -40,17 +40,17 @@ namespace Jellyfin.Plugin.OpenSubtitles.API
         {
             if (string.IsNullOrWhiteSpace(body.Username))
             {
-                return BadRequest(new { Message = "No Username in body" });
+                return BadRequest(new { Message = "No Username provided" });
             }
 
             if (string.IsNullOrWhiteSpace(body.Password))
             {
-                return BadRequest(new { Message = "No Password in body" });
+                return BadRequest(new { Message = "No Password provided" });
             }
 
             if (string.IsNullOrWhiteSpace(body.ApiKey))
             {
-                return BadRequest(new { Message = "No ApiKey in body" });
+                return BadRequest(new { Message = "No API Key provided" });
             }
 
             var response = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(body.Username, body.Password, body.ApiKey, token).ConfigureAwait(false);
