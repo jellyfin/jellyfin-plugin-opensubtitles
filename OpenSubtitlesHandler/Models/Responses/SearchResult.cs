@@ -7,7 +7,7 @@ namespace OpenSubtitlesHandler.Models.Responses
     {
         public int TotalPages;
         public int TotalCount;
-        public JsonElement Page;
+        public int Page;
         public List<Data> Data;
     }
 }

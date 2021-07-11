@@ -101,14 +101,7 @@ namespace OpenSubtitlesHandler
                     max = last.Data.TotalPages;
                 }
 
-                if (last.Data.Page.ValueKind == System.Text.Json.JsonValueKind.Number)
-                {
-                    current = last.Data.Page.GetInt32() + 1;
-                }
-                else
-                {
-                    current = int.Parse(last.Data.Page.GetString()) + 1;
-                }
+                current = last.Data.Page + 1;
 
                 final.AddRange(last.Data.Data);
             } while (current < max && last.Data.Data.Count == 100);
