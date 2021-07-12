@@ -6,13 +6,22 @@
                 <div class="inputContainer">
                     <input is="emby-input" type="text" id="username" label="${LabelUsername}" />
                     <div class="fieldDescription">
-                        <a is="emby-linkbutton" class="button-link" target="_blank" href="http://www.opensubtitles.org/">Register</a>
+                        <a is="emby-linkbutton" class="button-link" target="_blank" href="https://www.opensubtitles.com">Register</a>
+                        or
+                        <a is="emby-linkbutton" class="button-link" target="_blank" href="https://www.opensubtitles.com/users/import">Import your account from opensubtitles.org</a>
                     </div>
                 </div>
                 <div class="inputContainer">
                     <input is="emby-input" type="password" id="password" label="${LabelPassword}" />
                     <div class="fieldDescription">You can utilize this plugin by editing a library and modifying the options for subtitle downloads.</div>
                 </div>
+                <div class="inputContainer">
+                    <input is="emby-input" type="password" id="apikey" label="${HeaderApiKey}:" />
+                    <div class="fieldDescription">
+                        <a is="emby-linkbutton" class="button-link" target="_blank" href="https://www.opensubtitles.com/en/consumers/new">Create API Key</a>
+                    </div>
+                </div>
+                <div class="fieldDescription" id="ossresponse"></div>
                 <div>
                     <button is="emby-button" type="submit" class="raised button-submit block">
                         <span>${Save}</span>
