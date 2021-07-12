@@ -6,7 +6,6 @@ using System.Linq;
 using System.Net;
 using System.Security.Authentication;
 using System.Text;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.OpenSubtitles.Configuration;
@@ -268,13 +267,10 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 OpenSubtitlesHandler.OpenSubtitles.SetToken(key);
             }
 
-            if (_login != null)
+            // token expires every ~24h
+            if (_login != null && DateTime.UtcNow.Subtract(_lastLogin).TotalHours < 23.5)
             {
-                // token expires every ~24h
-                if (DateTime.UtcNow.Subtract(_lastLogin).TotalHours < 23.5)
-                {
-                    return;
-                }
+                return;
             }
 
             var options = GetOptions();

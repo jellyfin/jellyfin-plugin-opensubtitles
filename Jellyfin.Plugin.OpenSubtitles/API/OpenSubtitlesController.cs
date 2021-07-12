@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenSubtitlesHandler;
 using OpenSubtitlesHandler.Models;
-using OpenSubtitlesHandler.Models.Responses;
 
 namespace Jellyfin.Plugin.OpenSubtitles.API
 {
