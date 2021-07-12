@@ -14,6 +14,7 @@ namespace OpenSubtitlesHandler
     public static class Util
     {
         private static readonly HttpClient HttpClient = new HttpClient();
+        private static readonly JsonSerializerOptions SerializerOpts = new JsonSerializerOptions { IncludeFields = true, PropertyNamingPolicy = SnakeCaseNamingPolicy.Instance };
         public static Action<string> OnHttpUpdate = _ => {};
         private static string _version = string.Empty;
 
@@ -58,7 +59,7 @@ namespace OpenSubtitlesHandler
         /// <returns>Deserialized object</returns>
         public static T Deserialize<T>(string str)
         {
-            return JsonSerializer.Deserialize<T>(str, new JsonSerializerOptions { IncludeFields = true, PropertyNamingPolicy = SnakeCaseNamingPolicy.Instance});
+            return JsonSerializer.Deserialize<T>(str, SerializerOpts);
         }
 
         /// <summary>
@@ -143,7 +144,7 @@ namespace OpenSubtitlesHandler
             }
 
             var result = await HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-            var resHeaders = result.Headers.ToDictionary(a => a.Key.ToLower(), a => a.Value.First());
+            var resHeaders = result.Headers.ToDictionary(x => x.Key.ToLower(), x => x.Value.First());
             var resBody = await result.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
             return (resBody, resHeaders, result.StatusCode);

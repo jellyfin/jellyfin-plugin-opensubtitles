@@ -261,16 +261,16 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
         private async Task Login(CancellationToken cancellationToken)
         {
-            var key = GetOptions().ApiKey;
-            if (!string.IsNullOrWhiteSpace(key))
-            {
-                OpenSubtitlesHandler.OpenSubtitles.SetToken(key);
-            }
-
             // token expires every ~24h
             if (_login != null && DateTime.UtcNow.Subtract(_lastLogin).TotalHours < 23.5)
             {
                 return;
+            }
+
+            var key = GetOptions().ApiKey;
+            if (!string.IsNullOrWhiteSpace(key))
+            {
+                OpenSubtitlesHandler.OpenSubtitles.SetToken(key);
             }
 
             var options = GetOptions();

@@ -25,19 +25,10 @@ export default function (view, params) {
 
             const el = form.querySelector("#ossresponse");
             
-            const body = JSON.stringify({ Username: username, Password: password, ApiKey: apiKey });
+            const data = JSON.stringify({ Username: username, Password: password, ApiKey: apiKey });
             const url = ApiClient.getUrl(`Jellyfin.Plugin.OpenSubtitles/ValidateLoginInfo`);
 
-            const handler = response => response.text().then(text => {
-                let res = null;
-                try {
-                    res = JSON.parse(text);
-                }
-                catch (e) {
-                    Dashboard.processErrorResponse({statusText: "Failed to parse JSON: " + e});
-                    return;
-                }
-
+            const handler = response => response.json().then(res => {
                 if (response.ok) {
                     el.innerText = "Login info validated, this account can download " + res.Downloads + " subtitles per day";
 
@@ -60,7 +51,7 @@ export default function (view, params) {
                 }
             });
 
-            ApiClient.ajax({ type: 'POST', url, data: body, contentType: 'application/json'}).then(handler).catch(handler);
+            ApiClient.ajax({ type: 'POST', url, data, contentType: 'application/json'}).then(handler).catch(handler);
         });
         return false;
     });

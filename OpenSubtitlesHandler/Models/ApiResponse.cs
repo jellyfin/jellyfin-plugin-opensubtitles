@@ -7,7 +7,7 @@ namespace OpenSubtitlesHandler.Models
     public class ApiResponse<T>
     {
         public HttpStatusCode Code { get; }
-        public string Body { get; }= string.Empty;
+        public string Body { get; } = string.Empty;
         public int Remaining { get; }
         public int Reset { get; }
         public Dictionary<string, string> Headers { get; }
