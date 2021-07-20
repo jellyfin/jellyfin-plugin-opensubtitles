@@ -179,7 +179,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 }
                 else
                 {
-                    throw new RateLimitExceededException("OpenSubtitles download limit reached");
+                    throw new OpenApiException("OpenSubtitles download limit reached");
                 }
             }
 
@@ -205,7 +205,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                             _login.User.RemainingDownloads = 0;
                         }
 
-                        throw new RateLimitExceededException("OpenSubtitles download limit reached");
+                        throw new OpenApiException("OpenSubtitles download limit reached");
                     }
 
                     case HttpStatusCode.Unauthorized:
