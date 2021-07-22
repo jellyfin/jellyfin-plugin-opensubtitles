@@ -91,6 +91,11 @@ namespace OpenSubtitlesHandler
 
                 last = new ApiResponse<SearchResult>(response);
 
+                if (!last.Ok)
+                {
+                    break;
+                }
+
                 if (last.Data.TotalPages == 0)
                 {
                     return new ApiResponse<List<Data>>((final, response.limits, response.headers, response.statusCode));
