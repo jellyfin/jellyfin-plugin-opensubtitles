@@ -23,14 +23,14 @@ export default function (view, params) {
             const password = form.querySelector('#password').value;
             const apiKey = form.querySelector('#apikey').value;
 
-            const el = form.querySelector("#ossresponse");
+            const el = form.querySelector('#ossresponse');
             
             const data = JSON.stringify({ Username: username, Password: password, ApiKey: apiKey });
-            const url = ApiClient.getUrl(`Jellyfin.Plugin.OpenSubtitles/ValidateLoginInfo`);
+            const url = ApiClient.getUrl('Jellyfin.Plugin.OpenSubtitles/ValidateLoginInfo');
 
             const handler = response => response.json().then(res => {
                 if (response.ok) {
-                    el.innerText = "Login info validated, this account can download " + res.Downloads + " subtitles per day";
+                    el.innerText = `Login info validated, this account can download ${res.Downloads} subtitles per day`;
 
                     config.Username = username;
                     config.Password = password;
@@ -43,11 +43,11 @@ export default function (view, params) {
                 else {
                     let msg = res.Message ?? JSON.stringify(res, null, 2);
 
-                    if (msg == "You cannot consume this service") {
-                        msg = "Invalid API key provided";
+                    if (msg == 'You cannot consume this service') {
+                        msg = 'Invalid API key provided';
                     }
 
-                    Dashboard.processErrorResponse({statusText: "Request failed - " + msg});
+                    Dashboard.processErrorResponse({statusText: `Request failed - ${msg}`});
                 }
             });
 

@@ -48,7 +48,7 @@ namespace OpenSubtitlesHandler.Models
             }
             catch (Exception e)
             {
-                throw new Exception("Failed to parse JSON: " + e.Message + "\n\n" + Body);
+                throw new Exception($"Failed to parse JSON: {e.Message}\n\n{Body}");
             }
         }
 

@@ -107,7 +107,7 @@ namespace OpenSubtitlesHandler
                     throw new Exception("Missing plugin version");
                 }
 
-                var ua = "Jellyfin-Plugin-OpenSubtitles/" + _version;
+                var ua = $"Jellyfin-Plugin-OpenSubtitles/{_version}";
 
                 HttpClient.DefaultRequestHeaders.Add("User-Agent", ua);
             }

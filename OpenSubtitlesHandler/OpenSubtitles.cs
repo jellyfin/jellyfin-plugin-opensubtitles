@@ -87,7 +87,7 @@ namespace OpenSubtitlesHandler
             {
                 opts.Set("page", current.ToString());
 
-                var response = await RequestHandler.SendRequestAsync("/subtitles?" + opts, HttpMethod.Get, null, null, null, cancellationToken).ConfigureAwait(false);
+                var response = await RequestHandler.SendRequestAsync($"/subtitles?{opts}", HttpMethod.Get, null, null, null, cancellationToken).ConfigureAwait(false);
 
                 last = new ApiResponse<SearchResult>(response);
 

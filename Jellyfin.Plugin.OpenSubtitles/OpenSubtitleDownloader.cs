@@ -43,7 +43,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             OpenSubtitlesHandler.OpenSubtitles.SetVersion(version);
 
-            Util.OnHttpUpdate += str => _logger.LogInformation("[HTTP] " + str.Trim());
+            Util.OnHttpUpdate += str => _logger.LogDebug($"[HTTP] {str}");
         }
 
         /// <inheritdoc />
@@ -119,6 +119,8 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 options.Add("moviehash_match", "only");
             }
 
+            _logger.LogDebug($"Options: {Util.Serialize(options)}");
+
             var searchResponse = await OpenSubtitlesHandler.OpenSubtitles.SearchSubtitlesAsync(options, cancellationToken).ConfigureAwait(false);
 
             if (!searchResponse.Ok)
@@ -152,7 +154,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                     ThreeLetterISOLanguageName = request.Language,
 
                     // new API (currently) does not return the format
-                    Id = (i.Attributes.Format ?? "srt") + "-" + request.Language + "-" + i.Attributes.Files[0].FileId,
+                    Id = $"{i.Attributes.Format ?? "srt"}-{request.Language}-{i.Attributes.Files[0].FileId}",
                     Name = i.Attributes.Release,
                     DateCreated = i.Attributes.UploadDate,
                     IsHashMatch = i.Attributes.MoviehashMatch
@@ -173,6 +175,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             {
                 if (_limitReset < DateTime.UtcNow)
                 {
+                    _logger.LogDebug("Reset time passed, forcing a new login");
                     // force login because the limit resets at midnight
                     _login = null;
                 }
@@ -228,7 +231,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             if (_login?.User != null)
             {
                 _login.User.RemainingDownloads = info.Data.Remaining;
-                _logger.LogInformation("Remaining downloads: " + _login.User.RemainingDownloads);
+                _logger.LogInformation($"Remaining downloads: {_login.User.RemainingDownloads}");
             }
 
             if (string.IsNullOrWhiteSpace(info.Data.Link))
@@ -287,6 +290,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             if (!loginResponse.Ok)
             {
+                _logger.LogDebug($"Login failed: {loginResponse.Code} - ${loginResponse.Body}");
                 throw new AuthenticationException("Authentication to OpenSubtitles failed.");
             }
 
@@ -300,6 +304,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             _lastLogin = DateTime.UtcNow;
             _limitReset = Util.NextReset;
+            _logger.LogDebug($"Logged in at {_lastLogin}, reset at {_limitReset}");
         }
 
         private PluginConfiguration GetOptions()

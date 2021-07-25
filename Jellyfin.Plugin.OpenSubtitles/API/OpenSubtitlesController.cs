@@ -56,7 +56,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.API
 
             if (!response.Ok)
             {
-                var msg = response.Code + " - " + (response.Body.Length < 150 ? response.Body : string.Empty);
+                var msg = $"{response.Code} - {(response.Body.Length < 150 ? response.Body : string.Empty)}";
 
                 if (response.Body.Contains("message\":", StringComparison.Ordinal))
                 {
