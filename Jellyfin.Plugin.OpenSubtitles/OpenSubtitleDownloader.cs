@@ -42,7 +42,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             OpenSubtitlesHandler.OpenSubtitles.SetVersion(version);
 
-            Util.OnHttpUpdate += str => _logger.LogDebug($"[HTTP] {str}");
+            Util.OnHttpUpdate += str => _logger.LogDebug("[HTTP] {str}", str);
         }
 
         /// <inheritdoc />
@@ -118,17 +118,13 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 options.Add("moviehash_match", "only");
             }
 
-            _logger.LogDebug($"Options: {Util.Serialize(options)}");
+            _logger.LogDebug("Options: {options}", Util.Serialize(options));
 
             var searchResponse = await OpenSubtitlesHandler.OpenSubtitles.SearchSubtitlesAsync(options, cancellationToken).ConfigureAwait(false);
 
             if (!searchResponse.Ok)
             {
-                _logger.LogError(
-                    "Invalid response: {code} - {body}",
-                    searchResponse.Code,
-                    searchResponse.Body);
-
+                _logger.LogError("Invalid response: {Code} - {Body}", searchResponse.Code, searchResponse.Body);
                 return Enumerable.Empty<RemoteSubtitleInfo>();
             }
 
@@ -177,7 +173,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                     _logger.LogDebug("Reset time passed, updating user info");
 
                     await UpdateUserInfo(cancellationToken).ConfigureAwait(false);
-                    
+
                     // this shouldn't happen?
                     if (_login.User.RemainingDownloads <= 0)
                     {
@@ -236,7 +232,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             if (_login?.User != null)
             {
                 _login.User.RemainingDownloads = info.Data.Remaining;
-                _logger.LogInformation($"Remaining downloads: {_login.User.RemainingDownloads}");
+                _logger.LogInformation("Remaining downloads: {RemainingDownloads}", _login.User.RemainingDownloads);
             }
 
             if (string.IsNullOrWhiteSpace(info.Data.Link))
@@ -294,7 +290,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             if (!loginResponse.Ok)
             {
-                _logger.LogDebug($"Login failed: {loginResponse.Code} - ${loginResponse.Body}");
+                _logger.LogError("Login failed: {Code} - {Body}", loginResponse.Code, loginResponse.Body);
                 throw new AuthenticationException("Authentication to OpenSubtitles failed.");
             }
 
@@ -303,7 +299,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             await UpdateUserInfo(cancellationToken).ConfigureAwait(false);
 
-            _logger.LogDebug($"Logged in, download limit reset at {_limitReset}, token expiration at {_login.ExpirationDate}");
+            _logger.LogDebug("Logged in, download limit reset at {_limitReset}, token expiration at {ExpirationDate}", _limitReset, _login.ExpirationDate);
         }
 
         private async Task UpdateUserInfo(CancellationToken cancellationToken)
