@@ -27,7 +27,6 @@ namespace Jellyfin.Plugin.OpenSubtitles
         private static readonly CultureInfo _usCulture = CultureInfo.ReadOnly(new CultureInfo("en-US"));
         private readonly ILogger<OpenSubtitleDownloader> _logger;
         private LoginInfo? _login;
-        private DateTime _lastLogin;
         private DateTime _limitReset;
 
         /// <summary>
@@ -263,8 +262,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
         private async Task Login(CancellationToken cancellationToken)
         {
-            // token expires every ~24h
-            if (_login != null && DateTime.UtcNow.Subtract(_lastLogin).TotalHours < 23.5)
+            if (_login != null && DateTime.UtcNow < _login.ExpirationDate)
             {
                 return;
             }
@@ -302,9 +300,8 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 _login.User = infoResponse.Data.Data;
             }
 
-            _lastLogin = DateTime.UtcNow;
             _limitReset = Util.NextReset;
-            _logger.LogDebug($"Logged in at {_lastLogin}, reset at {_limitReset}");
+            _logger.LogDebug($"Logged in, download limit reset at {_limitReset}, token expiration at {_login.ExpirationDate}");
         }
 
         private PluginConfiguration GetOptions()
