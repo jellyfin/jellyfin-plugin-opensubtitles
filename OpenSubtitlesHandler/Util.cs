@@ -98,7 +98,7 @@ namespace OpenSubtitlesHandler
             }
         }
 
-        internal static async Task<(string, Dictionary<string, string>, HttpStatusCode)> SendRequestAsync(string url, HttpMethod method, string body, Dictionary<string, string> headers, CancellationToken cancellationToken)
+        internal static async Task<(string, Dictionary<string, string>, HttpStatusCode)> SendRequestAsync(string url, HttpMethod method, object body, Dictionary<string, string> headers, CancellationToken cancellationToken)
         {
             if (!HttpClient.DefaultRequestHeaders.Contains("User-Agent"))
             {
@@ -113,9 +113,9 @@ namespace OpenSubtitlesHandler
             }
 
             HttpContent content = null;
-            if (method != HttpMethod.Get && !string.IsNullOrWhiteSpace(body))
+            if (method != HttpMethod.Get && body != null)
             {
-                content = new StringContent(body, Encoding.UTF8, "application/json");
+                content = new StringContent(Util.Serialize(body), Encoding.UTF8, "application/json");
             }
 
             var request = new HttpRequestMessage

@@ -27,7 +27,7 @@ namespace OpenSubtitlesHandler
             }
         }
 
-        public static async Task<(string response, (int remaining, int reset) limits, Dictionary<string, string> headers, HttpStatusCode statusCode)> SendRequestAsync(string endpoint, HttpMethod method, string body, Dictionary<string, string> headers, string apiKey, CancellationToken cancellationToken)
+        public static async Task<(string response, (int remaining, int reset) limits, Dictionary<string, string> headers, HttpStatusCode statusCode)> SendRequestAsync(string endpoint, HttpMethod method, object body, Dictionary<string, string> headers, string apiKey, CancellationToken cancellationToken)
         {
             var key = !string.IsNullOrWhiteSpace(apiKey) ? apiKey : _apiKey;
 

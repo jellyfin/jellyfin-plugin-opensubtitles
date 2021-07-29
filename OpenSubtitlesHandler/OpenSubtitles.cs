@@ -25,7 +25,7 @@ namespace OpenSubtitlesHandler
 
         public static async Task<ApiResponse<LoginInfo>> LogInAsync(string username, string password, string apiKey, CancellationToken cancellationToken)
         {
-            var body = Util.Serialize(new { username, password });
+            var body = new { username, password };
             var response = await RequestHandler.SendRequestAsync("/login", HttpMethod.Post, body, null, apiKey, cancellationToken).ConfigureAwait(false);
 
             return new ApiResponse<LoginInfo>(response);
@@ -52,11 +52,11 @@ namespace OpenSubtitlesHandler
             return new ApiResponse<EncapsulatedUserInfo>(response);
         }
 
-        public static async Task<ApiResponse<SubtitleDownloadInfo>> GetSubtitleLinkAsync(int file_id, LoginInfo user, CancellationToken cancellationToken)
+        public static async Task<ApiResponse<SubtitleDownloadInfo>> GetSubtitleLinkAsync(int file, LoginInfo user, CancellationToken cancellationToken)
         {
             var headers = new Dictionary<string, string> { { "Authorization", user.Token } };
 
-            var body = Util.Serialize(new { file_id });
+            var body = new { file_id = file };
             var response = await RequestHandler.SendRequestAsync("/download", HttpMethod.Post, body, headers, null, cancellationToken).ConfigureAwait(false);
 
             return new ApiResponse<SubtitleDownloadInfo>(response);
@@ -64,9 +64,9 @@ namespace OpenSubtitlesHandler
 
         public static async Task<ApiResponse<string>> DownloadSubtitleAsync(string url, CancellationToken cancellationToken)
         {
-            var download = await RequestHandler.SendRequestAsync(url, HttpMethod.Get, null, null, null, cancellationToken).ConfigureAwait(true);
+            var response = await RequestHandler.SendRequestAsync(url, HttpMethod.Get, null, null, null, cancellationToken).ConfigureAwait(true);
 
-            return new ApiResponse<string>(download);
+            return new ApiResponse<string>(response);
         }
 
         public static async Task<ApiResponse<List<Data>>> SearchSubtitlesAsync(Dictionary<string, string> options, CancellationToken cancellationToken)
