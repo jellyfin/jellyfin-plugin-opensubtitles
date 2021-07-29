@@ -174,9 +174,15 @@ namespace Jellyfin.Plugin.OpenSubtitles
             {
                 if (_limitReset < DateTime.UtcNow)
                 {
-                    _logger.LogDebug("Reset time passed, forcing a new login");
-                    // force login because the limit resets at midnight
-                    _login = null;
+                    _logger.LogDebug("Reset time passed, updating user info");
+
+                    await UpdateUserInfo(cancellationToken).ConfigureAwait(false);
+                    
+                    // this shouldn't happen?
+                    if (_login.User.RemainingDownloads <= 0)
+                    {
+                        throw new OpenApiException("OpenSubtitles download limit reached");
+                    }
                 }
                 else
                 {
@@ -293,15 +299,25 @@ namespace Jellyfin.Plugin.OpenSubtitles
             }
 
             _login = loginResponse.Data;
+            _limitReset = Util.NextReset;
+
+            await UpdateUserInfo(cancellationToken).ConfigureAwait(false);
+
+            _logger.LogDebug($"Logged in, download limit reset at {_limitReset}, token expiration at {_login.ExpirationDate}");
+        }
+
+        private async Task UpdateUserInfo(CancellationToken cancellationToken)
+        {
+            if (_login == null)
+            {
+                return;
+            }
 
             var infoResponse = await OpenSubtitlesHandler.OpenSubtitles.GetUserInfo(_login, cancellationToken).ConfigureAwait(false);
             if (infoResponse.Ok)
             {
                 _login.User = infoResponse.Data.Data;
             }
-
-            _limitReset = Util.NextReset;
-            _logger.LogDebug($"Logged in, download limit reset at {_limitReset}, token expiration at {_login.ExpirationDate}");
         }
 
         private PluginConfiguration GetOptions()
