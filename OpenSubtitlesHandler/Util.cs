@@ -125,8 +125,7 @@ namespace OpenSubtitlesHandler
                 Content = content
             };
 
-            // docs say alphabetical order improves speed
-            foreach (var (key, value) in headers.OrderBy(x => x.Key))
+            foreach (var (key, value) in headers)
             {
                 if (key.ToLower() == "authorization")
                 {

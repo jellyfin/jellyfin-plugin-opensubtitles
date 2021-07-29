@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -72,7 +73,7 @@ namespace OpenSubtitlesHandler
         {
             var opts = System.Web.HttpUtility.ParseQueryString(string.Empty);
 
-            foreach (var (key, value) in options)
+            foreach (var (key, value) in options.OrderBy(x => x.Key))
             {
                 opts.Add(key, value);
             }
