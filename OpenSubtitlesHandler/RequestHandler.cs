@@ -97,7 +97,11 @@ namespace OpenSubtitlesHandler
                 return (response, (_hRemaining, _hReset), responseHeaders, httpStatusCode);
             }
 
-            await Task.Delay(1000 * (_hReset == -1 ? 5 : _hReset), cancellationToken).ConfigureAwait(false);
+            var time = _hReset == -1 ? 5 : _hReset;
+
+            Util.OnHttpUpdate($"Received TooManyRequests on ${method} {endpoint}, trying again in {time}s");
+
+            await Task.Delay(time * 1000, cancellationToken).ConfigureAwait(false);
 
             return await SendRequestAsync(endpoint, method, body, headers, key, cancellationToken).ConfigureAwait(false);
         }
