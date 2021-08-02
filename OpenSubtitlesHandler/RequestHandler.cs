@@ -99,7 +99,7 @@ namespace OpenSubtitlesHandler
 
             var time = _hReset == -1 ? 5 : _hReset;
 
-            Util.OnHttpUpdate($"Received TooManyRequests on ${method} {endpoint}, trying again in {time}s");
+            Util.OnHttpUpdate($"Received TooManyRequests on {method} {endpoint}, trying again in {time}s");
 
             await Task.Delay(time * 1000, cancellationToken).ConfigureAwait(false);
 

@@ -4,11 +4,13 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Security.Authentication;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.OpenSubtitles.Configuration;
+using MediaBrowser.Common.Extensions;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Subtitles;
 using MediaBrowser.Model.Entities;
@@ -177,12 +179,14 @@ namespace Jellyfin.Plugin.OpenSubtitles
                     // this shouldn't happen?
                     if (_login.User.RemainingDownloads <= 0)
                     {
-                        throw new OpenApiException("OpenSubtitles download limit reached");
+                        _logger.LogError("OpenSubtitles download limit reached");
+                        throw new RateLimitExceededException("OpenSubtitles download limit reached");
                     }
                 }
                 else
                 {
-                    throw new OpenApiException("OpenSubtitles download limit reached");
+                    _logger.LogError("OpenSubtitles download limit reached");
+                    throw new RateLimitExceededException("OpenSubtitles download limit reached");
                 }
             }
 
@@ -208,7 +212,8 @@ namespace Jellyfin.Plugin.OpenSubtitles
                             _login.User.RemainingDownloads = 0;
                         }
 
-                        throw new OpenApiException("OpenSubtitles download limit reached");
+                        _logger.LogError("OpenSubtitles download limit reached");
+                        throw new RateLimitExceededException("OpenSubtitles download limit reached");
                     }
 
                     case HttpStatusCode.Unauthorized:
@@ -226,7 +231,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                     info.Code,
                     msg);
 
-                throw new OpenApiException(msg);
+                throw new HttpRequestException(msg);
             }
 
             if (_login?.User != null)
@@ -243,7 +248,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                     fid,
                     info.Code);
 
-                throw new OpenApiException(msg);
+                throw new HttpRequestException(msg);
             }
 
             var res = await OpenSubtitlesHandler.OpenSubtitles.DownloadSubtitleAsync(info.Data.Link, cancellationToken).ConfigureAwait(false);
@@ -256,7 +261,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                     ossId,
                     res.Code);
 
-                throw new OpenApiException(msg);
+                throw new HttpRequestException(msg);
             }
 
             return new SubtitleResponse { Format = format, Language = language, Stream = new MemoryStream(Encoding.UTF8.GetBytes(res.Data)) };
