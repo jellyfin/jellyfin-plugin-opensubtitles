@@ -115,7 +115,7 @@ namespace OpenSubtitlesHandler
 
             foreach (var (key, value) in headers)
             {
-                if (key.ToLower() == "authorization")
+                if (string.Equals(key, "authorization", StringComparison.OrdinalIgnoreCase))
                 {
                     request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", value);
                 }

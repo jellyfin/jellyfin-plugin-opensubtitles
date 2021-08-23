@@ -47,7 +47,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.API
                 if (response.Body.Contains("message\":", StringComparison.Ordinal))
                 {
                     var err = Util.Deserialize<ErrorResponse>(response.Body);
-                    msg = err.Message == "You cannot consume this service" ? "Invalid API key provided" : err.Message;
+                    msg = string.Equals(err.Message, "You cannot consume this service", StringComparison.Ordinal) ? "Invalid API key provided" : err.Message;
                 }
 
                 return Unauthorized(new { Message = msg });
