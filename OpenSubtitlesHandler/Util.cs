@@ -16,7 +16,6 @@ namespace OpenSubtitlesHandler
     public static class Util
     {
         private static readonly HttpClient HttpClient = new HttpClient();
-        private static readonly JsonSerializerOptions SerializerOpts = new JsonSerializerOptions { IncludeFields = true, PropertyNamingPolicy = SnakeCaseNamingPolicy.Instance };
         private static string _version = string.Empty;
 
         internal static void SetVersion(string version)
@@ -49,7 +48,7 @@ namespace OpenSubtitlesHandler
         /// <returns>Deserialized object</returns>
         public static T Deserialize<T>(string str)
         {
-            return JsonSerializer.Deserialize<T>(str, SerializerOpts);
+            return JsonSerializer.Deserialize<T>(str);
         }
 
         /// <summary>

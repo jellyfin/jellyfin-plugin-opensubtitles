@@ -1,9 +1,10 @@
-﻿namespace OpenSubtitlesHandler.Models.Responses
+﻿using System.Text.Json.Serialization;
+
+namespace OpenSubtitlesHandler.Models.Responses
 {
     public class SubFile
     {
-        public int FileId;
-        public int CdNumber;
-        public string FileName;
+        [JsonPropertyName("file_id")]
+        public int FileId { get; set; }
     }
 }

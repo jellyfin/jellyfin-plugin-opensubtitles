@@ -1,7 +1,10 @@
-﻿namespace OpenSubtitlesHandler.Models.Responses
+﻿using System.Text.Json.Serialization;
+
+namespace OpenSubtitlesHandler.Models.Responses
 {
     public class EncapsulatedUserInfo
     {
-        public UserInfo Data;
+        [JsonPropertyName("data")]
+        public UserInfo Data { get; set; }
     }
 }

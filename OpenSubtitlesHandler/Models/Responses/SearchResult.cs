@@ -1,12 +1,15 @@
 ﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace OpenSubtitlesHandler.Models.Responses
 {
     public class SearchResult
     {
-        public int TotalPages;
-        public int TotalCount;
-        public int Page;
-        public List<Data> Data;
+        [JsonPropertyName("total_pages")]
+        public int TotalPages { get; set; }
+        [JsonPropertyName("page")]
+        public int Page { get; set; }
+        [JsonPropertyName("data")]
+        public List<Data> Data { get; set; }
     }
 }

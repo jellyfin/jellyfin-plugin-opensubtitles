@@ -1,34 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace OpenSubtitlesHandler.Models.Responses
 {
     public class Attributes
     {
-        public string SubtitleId;
-        public string Language;
-        public int DownloadCount;
-        public int NewDownloadCount;
-        public bool HearingImpaired;
-        public bool Hd;
-        public string Format;
-        public double Fps;
-        public int Votes;
-        public int Points;
-        public float Ratings;
-        public bool? FromTrusted;
-        public bool ForeignPartsOnly;
-        public bool AutoTranslation;
-        public bool AiTranslated;
-        public object MachineTranslated;
-        public DateTime UploadDate;
-        public string Release;
-        public string Comments;
-        public int? LegacySubtitleId;
-        public Uploader Uploader;
-        public FeatureDetails FeatureDetails;
-        public string Url;
-        public List<SubFile> Files;
-        public bool? MoviehashMatch;
+        [JsonPropertyName("download_count")]
+        public int DownloadCount { get; set; }
+        [JsonPropertyName("format")]
+        public string Format { get; set; }
+        [JsonPropertyName("ratings")]
+        public float Ratings { get; set; }
+        [JsonPropertyName("from_trusted")]
+        public bool? FromTrusted { get; set; }
+        [JsonPropertyName("upload_date")]
+        public DateTime UploadDate { get; set; }
+        [JsonPropertyName("release")]
+        public string Release { get; set; }
+        [JsonPropertyName("comments")]
+        public string Comments { get; set; }
+        [JsonPropertyName("uploader")]
+        public Uploader Uploader { get; set; }
+        [JsonPropertyName("feature_details")]
+        public FeatureDetails FeatureDetails { get; set; }
+        [JsonPropertyName("files")]
+        public List<SubFile> Files { get; set; }
+        [JsonPropertyName("moviehash_match")]
+        public bool? MoviehashMatch { get; set; }
     }
 }

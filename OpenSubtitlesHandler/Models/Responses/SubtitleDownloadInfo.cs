@@ -1,11 +1,14 @@
-﻿namespace OpenSubtitlesHandler.Models.Responses
+﻿using System.Text.Json.Serialization;
+
+namespace OpenSubtitlesHandler.Models.Responses
 {
     public class SubtitleDownloadInfo
     {
-        public string Link;
-        public string FileName;
-        public int Requests;
-        public int Remaining;
-        public string Message;
+        [JsonPropertyName("link")]
+        public string Link { get; set; }
+        [JsonPropertyName("remaining")]
+        public int Remaining { get; set; }
+        [JsonPropertyName("message")]
+        public string Message { get; set; }
     }
 }

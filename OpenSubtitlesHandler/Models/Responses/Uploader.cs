@@ -1,9 +1,10 @@
-﻿namespace OpenSubtitlesHandler.Models.Responses
+﻿using System.Text.Json.Serialization;
+
+namespace OpenSubtitlesHandler.Models.Responses
 {
     public class Uploader
     {
-        public int? UploaderId;
-        public string Name;
-        public string Rank;
+        [JsonPropertyName("name")]
+        public string Name { get; set; }
     }
 }

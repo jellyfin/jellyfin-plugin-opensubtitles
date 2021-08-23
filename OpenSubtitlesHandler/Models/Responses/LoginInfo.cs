@@ -1,15 +1,19 @@
 ﻿using System;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace OpenSubtitlesHandler.Models.Responses
 {
     public class LoginInfo
     {
-        public UserInfo User;
-        public string Token;
-        public int Status;
         private DateTime? _expirationDate = null;
 
+        [JsonPropertyName("user")]
+        public UserInfo User { get; set; }
+        [JsonPropertyName("token")]
+        public string Token { get; set; }
+
+        [JsonIgnore]
         public DateTime ExpirationDate
         {
             get

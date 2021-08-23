@@ -1,9 +1,10 @@
-﻿namespace OpenSubtitlesHandler.Models.Responses
+﻿using System.Text.Json.Serialization;
+
+namespace OpenSubtitlesHandler.Models.Responses
 {
     public class Data
     {
-        public string Id;
-        public string Type;
-        public Attributes Attributes;
+        [JsonPropertyName("attributes")]
+        public Attributes Attributes { get; set; }
     }
 }

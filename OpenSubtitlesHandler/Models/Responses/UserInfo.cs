@@ -1,13 +1,12 @@
+using System.Text.Json.Serialization;
+
 namespace OpenSubtitlesHandler.Models.Responses
 {
     public class UserInfo
     {
-        public int AllowedDownloads;
-        public string Level;
-        public int UserId;
-        public bool ExtInstalled;
-        public bool Vip;
-        public int? DownloadsCount;
-        public int? RemainingDownloads;
+        [JsonPropertyName("allowed_downloads")]
+        public int AllowedDownloads { get; set; }
+        [JsonPropertyName("remaining_downloads")]
+        public int? RemainingDownloads { get; set; }
     }
 }
