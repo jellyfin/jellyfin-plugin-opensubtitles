@@ -18,17 +18,6 @@ namespace OpenSubtitlesHandler
         public static Action<string> OnHttpUpdate = _ => {};
         private static string _version = string.Empty;
 
-        public static DateTime NextReset
-        {
-            get
-            {
-                // download limits get reset every day at midnight (UTC)
-                var now = DateTime.UtcNow;
-
-                return new DateTime(now.Year, now.Month, now.Day).AddDays(1).AddMinutes(1);
-            }
-        }
-
         internal static void SetVersion(string version)
         {
             Util._version = version;

@@ -201,6 +201,15 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             var info = await OpenSubtitlesHandler.OpenSubtitles.GetSubtitleLinkAsync(fid, _login, cancellationToken).ConfigureAwait(false);
 
+            if (info.Data.Message != null && info.Data.Message.Contains("UTC", StringComparison.Ordinal))
+            {
+                // "Your quota will be renewed in 20 hours and 52 minutes (2021-08-24 12:02:10 UTC) "
+                var str = info.Data.Message.Split('(')[1].Trim().Replace(" UTC)", "Z", StringComparison.Ordinal);
+                _limitReset = DateTime.Parse(str, _usCulture, DateTimeStyles.AdjustToUniversal);
+
+                _logger.LogDebug("Updated expiration time to {_limitReset}", _limitReset);
+            }
+
             if (!info.Ok)
             {
                 switch (info.Code)
@@ -300,7 +309,8 @@ namespace Jellyfin.Plugin.OpenSubtitles
             }
 
             _login = loginResponse.Data;
-            _limitReset = Util.NextReset;
+            // change this in case OpenSubtitles adds limitReset to /api/v1/infos/user
+            _limitReset = _login.ExpirationDate;
 
             await UpdateUserInfo(cancellationToken).ConfigureAwait(false);
 
