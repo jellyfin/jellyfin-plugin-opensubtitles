@@ -4,10 +4,12 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Mime;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Net.Http.Headers;
 
 namespace OpenSubtitlesHandler
 {
@@ -58,28 +60,23 @@ namespace OpenSubtitlesHandler
         {
             using (input)
             {
-                var streamSize = input.Length;
-                var lHash = streamSize;
+                long streamSize = input.Length, lHash = streamSize;
+                int size = sizeof(long), count = 65536 / size;
+                var buffer = new byte[size];
 
-                long i = 0;
-                byte[] buffer = new byte[sizeof(long)];
-
-                while (i < 65536 / sizeof(long) && (input.Read(buffer, 0, sizeof(long)) > 0))
+                for (int i = 0; i < count && input.Read(buffer, 0, size) > 0; i++)
                 {
-                    i++;
                     lHash += BitConverter.ToInt64(buffer, 0);
                 }
 
                 input.Position = Math.Max(0, streamSize - 65536);
-                i = 0;
 
-                while (i < 65536 / sizeof(long) && (input.Read(buffer, 0, sizeof(long)) > 0))
+                for (int i = 0; i < count && input.Read(buffer, 0, size) > 0; i++)
                 {
-                    i++;
                     lHash += BitConverter.ToInt64(buffer, 0);
                 }
 
-                byte[] result = BitConverter.GetBytes(lHash);
+                var result = BitConverter.GetBytes(lHash);
                 Array.Reverse(result);
 
                 return result;
@@ -88,7 +85,7 @@ namespace OpenSubtitlesHandler
 
         internal static async Task<(string, Dictionary<string, string>, HttpStatusCode)> SendRequestAsync(string url, HttpMethod method, object body, Dictionary<string, string> headers, CancellationToken cancellationToken)
         {
-            if (!HttpClient.DefaultRequestHeaders.Contains("User-Agent"))
+            if (!HttpClient.DefaultRequestHeaders.Contains(HeaderNames.UserAgent))
             {
                 if (string.IsNullOrWhiteSpace(_version))
                 {
@@ -97,13 +94,13 @@ namespace OpenSubtitlesHandler
 
                 var ua = $"Jellyfin-Plugin-OpenSubtitles/{_version}";
 
-                HttpClient.DefaultRequestHeaders.Add("User-Agent", ua);
+                HttpClient.DefaultRequestHeaders.Add(HeaderNames.UserAgent, ua);
             }
 
             HttpContent content = null;
             if (method != HttpMethod.Get && body != null)
             {
-                content = new StringContent(Util.Serialize(body), Encoding.UTF8, "application/json");
+                content = new StringContent(Util.Serialize(body), Encoding.UTF8, MediaTypeNames.Application.Json);
             }
 
             var request = new HttpRequestMessage
