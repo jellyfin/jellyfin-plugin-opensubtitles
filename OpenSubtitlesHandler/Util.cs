@@ -15,7 +15,6 @@ namespace OpenSubtitlesHandler
     {
         private static readonly HttpClient HttpClient = new HttpClient();
         private static readonly JsonSerializerOptions SerializerOpts = new JsonSerializerOptions { IncludeFields = true, PropertyNamingPolicy = SnakeCaseNamingPolicy.Instance };
-        public static Action<string> OnHttpUpdate = _ => {};
         private static string _version = string.Empty;
 
         internal static void SetVersion(string version)

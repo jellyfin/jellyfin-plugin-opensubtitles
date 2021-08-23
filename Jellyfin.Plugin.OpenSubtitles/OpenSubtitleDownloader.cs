@@ -43,8 +43,6 @@ namespace Jellyfin.Plugin.OpenSubtitles
             var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString();
 
             OpenSubtitlesHandler.OpenSubtitles.SetVersion(version);
-
-            Util.OnHttpUpdate += str => _logger.LogDebug("[HTTP] {str}", str);
         }
 
         /// <inheritdoc />
