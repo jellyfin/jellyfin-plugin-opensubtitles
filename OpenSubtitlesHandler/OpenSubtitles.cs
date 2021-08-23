@@ -28,7 +28,7 @@ namespace OpenSubtitlesHandler
             var body = new { username, password };
             var response = await RequestHandler.SendRequestAsync("/login", HttpMethod.Post, body, null, apiKey, cancellationToken).ConfigureAwait(false);
 
-            return new ApiResponse<LoginInfo>(response);
+            return new ApiResponse<LoginInfo>(response.response, response.statusCode);
         }
 
         public static async Task<bool> LogOutAsync(LoginInfo user, string apiKey, CancellationToken cancellationToken)
@@ -40,7 +40,7 @@ namespace OpenSubtitlesHandler
 
             var response = await RequestHandler.SendRequestAsync("/logout", HttpMethod.Delete, null, headers, apiKey, cancellationToken).ConfigureAwait(false);
 
-            return new ApiResponse<object>(response).Ok;
+            return new ApiResponse<object>(response.response, response.statusCode).Ok;
         }
 
         public static async Task<ApiResponse<EncapsulatedUserInfo>> GetUserInfo(LoginInfo user, CancellationToken cancellationToken)
@@ -49,7 +49,7 @@ namespace OpenSubtitlesHandler
 
             var response = await RequestHandler.SendRequestAsync("/infos/user", HttpMethod.Get, null, headers, null, cancellationToken).ConfigureAwait(false);
 
-            return new ApiResponse<EncapsulatedUserInfo>(response);
+            return new ApiResponse<EncapsulatedUserInfo>(response.response, response.statusCode);
         }
 
         public static async Task<ApiResponse<SubtitleDownloadInfo>> GetSubtitleLinkAsync(int file, LoginInfo user, CancellationToken cancellationToken)
@@ -59,14 +59,14 @@ namespace OpenSubtitlesHandler
             var body = new { file_id = file };
             var response = await RequestHandler.SendRequestAsync("/download", HttpMethod.Post, body, headers, null, cancellationToken).ConfigureAwait(false);
 
-            return new ApiResponse<SubtitleDownloadInfo>(response);
+            return new ApiResponse<SubtitleDownloadInfo>(response.response, response.statusCode);
         }
 
         public static async Task<ApiResponse<string>> DownloadSubtitleAsync(string url, CancellationToken cancellationToken)
         {
             var response = await RequestHandler.SendRequestAsync(url, HttpMethod.Get, null, null, null, cancellationToken).ConfigureAwait(false);
 
-            return new ApiResponse<string>(response);
+            return new ApiResponse<string>(response.response, response.statusCode);
         }
 
         public static async Task<ApiResponse<List<Data>>> SearchSubtitlesAsync(Dictionary<string, string> options, CancellationToken cancellationToken)
@@ -90,7 +90,7 @@ namespace OpenSubtitlesHandler
 
                 var response = await RequestHandler.SendRequestAsync($"/subtitles?{opts}", HttpMethod.Get, null, null, null, cancellationToken).ConfigureAwait(false);
 
-                last = new ApiResponse<SearchResult>(response);
+                last = new ApiResponse<SearchResult>(response.response, response.statusCode);
 
                 if (!last.Ok)
                 {
@@ -99,7 +99,7 @@ namespace OpenSubtitlesHandler
 
                 if (last.Data.TotalPages == 0)
                 {
-                    return new ApiResponse<List<Data>>((final, response.limits, response.headers, response.statusCode));
+                    return new ApiResponse<List<Data>>(final, response.statusCode);
                 }
 
                 if (max == -1)
@@ -112,7 +112,7 @@ namespace OpenSubtitlesHandler
                 final.AddRange(last.Data.Data);
             } while (current < max && last.Data.Data.Count == 100);
 
-            return new ApiResponse<List<Data>>((final, (last.Remaining, last.Reset), last.Headers, last.Code));
+            return new ApiResponse<List<Data>>(final, last.Code);
         }
     }
 }

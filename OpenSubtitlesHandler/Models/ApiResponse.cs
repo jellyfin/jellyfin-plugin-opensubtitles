@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 
 namespace OpenSubtitlesHandler.Models
@@ -8,27 +7,18 @@ namespace OpenSubtitlesHandler.Models
     {
         public HttpStatusCode Code { get; }
         public string Body { get; } = string.Empty;
-        public int Remaining { get; }
-        public int Reset { get; }
-        public Dictionary<string, string> Headers { get; }
         public T Data { get; }
 
-        public ApiResponse((T response, (int remaining, int reset) limits, Dictionary<string, string> headers, HttpStatusCode statusCode) input)
+        public ApiResponse(T response, HttpStatusCode statusCode)
         {
-            Headers = input.headers;
-            Remaining = input.limits.remaining;
-            Reset = input.limits.reset;
-            Code = input.statusCode;
-            Data = input.response;
+            Code = statusCode;
+            Data = response;
         }
 
-        public ApiResponse((string response, (int remaining, int reset) limits, Dictionary<string, string> headers, HttpStatusCode statusCode) input)
+        public ApiResponse(string response, HttpStatusCode statusCode)
         {
-            Body = input.response;
-            Headers = input.headers;
-            Remaining = input.limits.remaining;
-            Reset = input.limits.reset;
-            Code = input.statusCode;
+            Code = statusCode;
+            Body = response;
 
             if (typeof(T) == typeof(string))
             {

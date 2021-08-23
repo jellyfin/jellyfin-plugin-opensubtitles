@@ -27,7 +27,7 @@ namespace OpenSubtitlesHandler
             }
         }
 
-        public static async Task<(string response, (int remaining, int reset) limits, Dictionary<string, string> headers, HttpStatusCode statusCode)> SendRequestAsync(string endpoint, HttpMethod method, object body, Dictionary<string, string> headers, string apiKey, CancellationToken cancellationToken)
+        public static async Task<(string response, HttpStatusCode statusCode)> SendRequestAsync(string endpoint, HttpMethod method, object body, Dictionary<string, string> headers, string apiKey, CancellationToken cancellationToken)
         {
             var key = !string.IsNullOrWhiteSpace(apiKey) ? apiKey : _apiKey;
 
@@ -77,7 +77,7 @@ namespace OpenSubtitlesHandler
 
             if (!api)
             {
-                return (response, (_hRemaining, _hReset), responseHeaders, httpStatusCode);
+                return (response, httpStatusCode);
             }
 
             _requestCount++;
@@ -94,7 +94,7 @@ namespace OpenSubtitlesHandler
 
             if (httpStatusCode != HttpStatusCode.TooManyRequests)
             {
-                return (response, (_hRemaining, _hReset), responseHeaders, httpStatusCode);
+                return (response, httpStatusCode);
             }
 
             var time = _hReset == -1 ? 5 : _hReset;
