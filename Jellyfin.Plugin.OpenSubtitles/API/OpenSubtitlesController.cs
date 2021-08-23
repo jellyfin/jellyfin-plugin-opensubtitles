@@ -2,6 +2,7 @@ using System;
 using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenSubtitlesHandler;
@@ -14,6 +15,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.API
     /// </summary>
     [ApiController]
     [Produces(MediaTypeNames.Application.Json)]
+    [Authorize(Policy = "DefaultAuthorization")]
     public class OpenSubtitlesController : ControllerBase
     {
         /// <summary>
@@ -26,7 +28,6 @@ namespace Jellyfin.Plugin.OpenSubtitles.API
         /// <response code="400">Login info is missing data.</response>
         /// <response code="401">Login info not valid.</response>
         /// <param name="body">The request body.</param>
-        /// <param name="token">Cancellation token.</param>
         /// <returns>
         /// An <see cref="NoContentResult"/> if the login info is valid, a <see cref="BadRequestResult"/> if the request body missing is data
         /// or <see cref="UnauthorizedResult"/> if the login info is not valid.
@@ -35,24 +36,9 @@ namespace Jellyfin.Plugin.OpenSubtitles.API
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult> ValidateLoginInfo([FromBody] LoginInfoInput body, CancellationToken token)
+        public async Task<ActionResult> ValidateLoginInfo([FromBody] LoginInfoInput body)
         {
-            if (string.IsNullOrWhiteSpace(body.Username))
-            {
-                return BadRequest(new { Message = "No Username provided" });
-            }
-
-            if (string.IsNullOrWhiteSpace(body.Password))
-            {
-                return BadRequest(new { Message = "No Password provided" });
-            }
-
-            if (string.IsNullOrWhiteSpace(body.ApiKey))
-            {
-                return BadRequest(new { Message = "No API Key provided" });
-            }
-
-            var response = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(body.Username, body.Password, body.ApiKey, token).ConfigureAwait(false);
+            var response = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(body.Username, body.Password, body.ApiKey, CancellationToken.None).ConfigureAwait(false);
 
             if (!response.Ok)
             {
@@ -67,7 +53,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.API
                 return Unauthorized(new { Message = msg });
             }
 
-            await OpenSubtitlesHandler.OpenSubtitles.LogOutAsync(response.Data, body.ApiKey, token).ConfigureAwait(false);
+            await OpenSubtitlesHandler.OpenSubtitles.LogOutAsync(response.Data, body.ApiKey, CancellationToken.None).ConfigureAwait(false);
 
             return Ok(new { Downloads = response.Data.User.AllowedDownloads });
         }
