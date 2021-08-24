@@ -82,9 +82,16 @@ namespace Jellyfin.Plugin.OpenSubtitles
             await Login(cancellationToken).ConfigureAwait(false);
 
             string hash;
-            await using (var fileStream = File.OpenRead(request.MediaPath))
+            try
             {
-                hash = Util.ComputeHash(fileStream);
+                await using (var fileStream = File.OpenRead(request.MediaPath))
+                {
+                    hash = Util.ComputeHash(fileStream);
+                }
+            }
+            catch (Exception e)
+            {
+                throw new IOException(string.Format(CultureInfo.InvariantCulture, "Exception while computing hash for {0}", request.MediaPath), e);
             }
 
             var options = new Dictionary<string, string>
