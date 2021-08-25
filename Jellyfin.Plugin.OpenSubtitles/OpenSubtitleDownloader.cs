@@ -314,8 +314,6 @@ namespace Jellyfin.Plugin.OpenSubtitles
             }
 
             _login = loginResponse.Data;
-            // change this in case OpenSubtitles adds limitReset to /api/v1/infos/user
-            _limitReset = _login.ExpirationDate;
 
             await UpdateUserInfo(cancellationToken).ConfigureAwait(false);
 
@@ -333,6 +331,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             if (infoResponse.Ok)
             {
                 _login.User = infoResponse.Data.Data;
+                _limitReset = _login.User.ResetTime;
             }
         }
 
