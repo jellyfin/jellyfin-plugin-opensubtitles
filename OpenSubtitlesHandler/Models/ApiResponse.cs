@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Text.Json;
 
 namespace OpenSubtitlesHandler.Models
 {
@@ -34,7 +35,7 @@ namespace OpenSubtitlesHandler.Models
 
             try
             {
-                Data = Util.Deserialize<T>(Body);
+                Data = JsonSerializer.Deserialize<T>(Body);
             }
             catch (Exception e)
             {

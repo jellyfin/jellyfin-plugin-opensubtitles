@@ -35,8 +35,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
         /// Initializes a new instance of the <see cref="OpenSubtitleDownloader"/> class.
         /// </summary>
         /// <param name="logger">Instance of the <see cref="ILogger{OpenSubtitleDownloader}"/> interface.</param>
-        public OpenSubtitleDownloader(
-            ILogger<OpenSubtitleDownloader> logger)
+        public OpenSubtitleDownloader(ILogger<OpenSubtitleDownloader> logger)
         {
             _logger = logger;
 
@@ -125,7 +124,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 options.Add("moviehash_match", "only");
             }
 
-            _logger.LogDebug("Options: {options}", Util.Serialize(options));
+            _logger.LogDebug("Search query: {query}", string.Join(", ", options.Keys.Select(x => $"{x}: {options[x]}")));
 
             var searchResponse = await OpenSubtitlesHandler.OpenSubtitles.SearchSubtitlesAsync(options, cancellationToken).ConfigureAwait(false);
 
@@ -164,9 +163,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 .Where(i => !string.Equals(i.Format, "sub", StringComparison.OrdinalIgnoreCase) && !string.Equals(i.Format, "idx", StringComparison.OrdinalIgnoreCase));
         }
 
-        private async Task<SubtitleResponse> GetSubtitlesInternal(
-            string id,
-            CancellationToken cancellationToken)
+        private async Task<SubtitleResponse> GetSubtitlesInternal(string id, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(id))
             {

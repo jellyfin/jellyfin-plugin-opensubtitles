@@ -34,24 +34,6 @@ namespace OpenSubtitlesHandler
         }
 
         /// <summary>
-        /// Serialize object into JSON
-        /// </summary>
-        /// <returns>JSON string of the object</returns>
-        public static string Serialize(object o)
-        {
-            return JsonSerializer.Serialize(o);
-        }
-
-        /// <summary>
-        /// Deserialize object from JSON
-        /// </summary>
-        /// <returns>Deserialized object</returns>
-        public static T Deserialize<T>(string str)
-        {
-            return JsonSerializer.Deserialize<T>(str);
-        }
-
-        /// <summary>
         /// Compute hash of specified movie stream
         /// </summary>
         /// <returns>Hash of the movie</returns>
@@ -99,7 +81,7 @@ namespace OpenSubtitlesHandler
             HttpContent content = null;
             if (method != HttpMethod.Get && body != null)
             {
-                content = new StringContent(Util.Serialize(body), Encoding.UTF8, MediaTypeNames.Application.Json);
+                content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, MediaTypeNames.Application.Json);
             }
 
             var request = new HttpRequestMessage
@@ -121,9 +103,9 @@ namespace OpenSubtitlesHandler
                 }
             }
 
-            if (!request.Headers.Contains("accept"))
+            if (!request.Headers.Contains(HeaderNames.Accept))
             {
-                request.Headers.Add("Accept", "*/*");
+                request.Headers.Add(HeaderNames.Accept, "*/*");
             }
 
             var result = await HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);

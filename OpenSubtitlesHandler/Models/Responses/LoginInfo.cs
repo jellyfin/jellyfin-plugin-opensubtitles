@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace OpenSubtitlesHandler.Models.Responses
@@ -32,7 +33,7 @@ namespace OpenSubtitlesHandler.Models.Responses
                 part = part.PadRight(part.Length + (4 - part.Length % 4) % 4, '=');
                 part = Encoding.UTF8.GetString(Convert.FromBase64String(part));
 
-                var sec = Util.Deserialize<JWTPayload>(part).exp;
+                var sec = JsonSerializer.Deserialize<JWTPayload>(part).exp;
 
                 _expirationDate = DateTimeOffset.FromUnixTimeSeconds(sec).UtcDateTime;
 

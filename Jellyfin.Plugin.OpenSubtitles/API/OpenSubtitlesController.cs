@@ -1,11 +1,11 @@
 using System;
 using System.Net.Mime;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using OpenSubtitlesHandler;
 using OpenSubtitlesHandler.Models;
 
 namespace Jellyfin.Plugin.OpenSubtitles.API
@@ -46,8 +46,11 @@ namespace Jellyfin.Plugin.OpenSubtitles.API
 
                 if (response.Body.Contains("message\":", StringComparison.Ordinal))
                 {
-                    var err = Util.Deserialize<ErrorResponse>(response.Body);
-                    msg = string.Equals(err.Message, "You cannot consume this service", StringComparison.Ordinal) ? "Invalid API key provided" : err.Message;
+                    var err = JsonSerializer.Deserialize<ErrorResponse>(response.Body);
+                    if (err != null)
+                    {
+                        msg = string.Equals(err.Message, "You cannot consume this service", StringComparison.Ordinal) ? "Invalid API key provided" : err.Message;
+                    }
                 }
 
                 return Unauthorized(new { Message = msg });
