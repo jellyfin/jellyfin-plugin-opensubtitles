@@ -106,7 +106,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             }
             catch (IOException e)
             {
-                throw new IOException(string.Format(CultureInfo.InvariantCulture, "IOException while computing hash for {0}", request.MediaPath), e);
+                throw new IOException(string.Format(CultureInfo.InvariantCulture, "IOException while computing hash for {MediaPath}", request.MediaPath), e);
             }
 
             var options = new Dictionary<string, string>
@@ -140,7 +140,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 options.Add("moviehash_match", "only");
             }
 
-            _logger.LogDebug("Search query: {query}", string.Join(", ", options.Keys.Select(x => $"{x}: {options[x]}")));
+            _logger.LogDebug("Search query: {Query}", string.Join(", ", options.Keys.Select(x => $"{x}: {options[x]}")));
 
             var searchResponse = await OpenSubtitlesHandler.OpenSubtitles.SearchSubtitlesAsync(options, _apiKey, cancellationToken).ConfigureAwait(false);
 
@@ -230,7 +230,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 var str = info.Data.Message.Split('(')[1].Trim().Replace(" UTC)", "Z", StringComparison.Ordinal);
                 _limitReset = DateTime.Parse(str, _usCulture, DateTimeStyles.AdjustToUniversal);
 
-                _logger.LogDebug("Updated expiration time to {_limitReset}", _limitReset);
+                _logger.LogDebug("Updated expiration time to {ResetTime}", _limitReset);
             }
 
             if (!info.Ok)
@@ -333,7 +333,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             await UpdateUserInfo(cancellationToken).ConfigureAwait(false);
 
-            _logger.LogDebug("Logged in, download limit reset at {_limitReset}, token expiration at {ExpirationDate}", _limitReset, _login.ExpirationDate);
+            _logger.LogDebug("Logged in, download limit reset at {ResetTime}, token expiration at {ExpirationDate}", _limitReset, _login.ExpirationDate);
         }
 
         private async Task UpdateUserInfo(CancellationToken cancellationToken)
