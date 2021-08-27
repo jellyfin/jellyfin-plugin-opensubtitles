@@ -13,14 +13,17 @@ using Microsoft.Net.Http.Headers;
 
 namespace OpenSubtitlesHandler
 {
-    public static class Util
+    public class Util
     {
-        private static readonly HttpClient HttpClient = new HttpClient();
-        private static string _version = string.Empty;
+        private readonly IHttpClientFactory _clientFactory;
+        private readonly string _version;
 
-        internal static void SetVersion(string version)
+        public static Util Instance { get; set; }
+
+        public Util(IHttpClientFactory factory, string version)
         {
-            Util._version = version;
+            this._clientFactory = factory;
+            this._version = version;
         }
 
         /// <summary>
@@ -64,19 +67,12 @@ namespace OpenSubtitlesHandler
             }
         }
 
-        internal static async Task<(string, Dictionary<string, string>, HttpStatusCode)> SendRequestAsync(string url, HttpMethod method, object body, Dictionary<string, string> headers, CancellationToken cancellationToken)
+        internal async Task<(string, Dictionary<string, string>, HttpStatusCode)> SendRequestAsync(string url, HttpMethod method, object body, Dictionary<string, string> headers, CancellationToken cancellationToken)
         {
-            if (!HttpClient.DefaultRequestHeaders.Contains(HeaderNames.UserAgent))
-            {
-                if (string.IsNullOrWhiteSpace(_version))
-                {
-                    throw new Exception("Missing plugin version");
-                }
+            var client = _clientFactory.CreateClient();
 
-                var ua = $"Jellyfin-Plugin-OpenSubtitles/{_version}";
-
-                HttpClient.DefaultRequestHeaders.Add(HeaderNames.UserAgent, ua);
-            }
+            client.DefaultRequestHeaders.Add(HeaderNames.UserAgent, $"Jellyfin-Plugin-OpenSubtitles/{_version}");
+            client.DefaultRequestHeaders.Add(HeaderNames.Accept, "*/*");
 
             HttpContent content = null;
             if (method != HttpMethod.Get && body != null)
@@ -103,12 +99,7 @@ namespace OpenSubtitlesHandler
                 }
             }
 
-            if (!request.Headers.Contains(HeaderNames.Accept))
-            {
-                request.Headers.Add(HeaderNames.Accept, "*/*");
-            }
-
-            var result = await HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            var result = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
             var resHeaders = result.Headers.ToDictionary(x => x.Key.ToLower(), x => x.Value.First());
             var resBody = await result.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 

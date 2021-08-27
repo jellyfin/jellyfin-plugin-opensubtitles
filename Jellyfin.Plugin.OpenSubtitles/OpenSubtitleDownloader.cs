@@ -30,18 +30,29 @@ namespace Jellyfin.Plugin.OpenSubtitles
         private readonly ILogger<OpenSubtitleDownloader> _logger;
         private LoginInfo? _login;
         private DateTime _limitReset;
+        private string _apiKey;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OpenSubtitleDownloader"/> class.
         /// </summary>
         /// <param name="logger">Instance of the <see cref="ILogger{OpenSubtitleDownloader}"/> interface.</param>
-        public OpenSubtitleDownloader(ILogger<OpenSubtitleDownloader> logger)
+        /// <param name="httpClientFactory">The <see cref="IHttpClientFactory"/> for creating Http Clients.</param>
+        public OpenSubtitleDownloader(ILogger<OpenSubtitleDownloader> logger, IHttpClientFactory httpClientFactory)
         {
             _logger = logger;
 
-            var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString();
+            var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version!.ToString();
 
-            OpenSubtitlesHandler.OpenSubtitles.SetVersion(version);
+            OpenSubtitlesHandler.Util.Instance = new Util(httpClientFactory, version);
+
+            OpenSubtitlesPlugin.Instance!.ConfigurationChanged += (_, _) =>
+            {
+                _apiKey = GetOptions().ApiKey;
+                // force a login next time a request is made
+                _login = null;
+            };
+
+            _apiKey = GetOptions().ApiKey;
         }
 
         /// <inheritdoc />
@@ -62,6 +73,11 @@ namespace Jellyfin.Plugin.OpenSubtitles
             if (request == null)
             {
                 throw new ArgumentNullException(nameof(request));
+            }
+
+            if (string.IsNullOrWhiteSpace(_apiKey))
+            {
+                throw new AuthenticationException("API key not set up");
             }
 
             long.TryParse(request.GetProviderId(MetadataProvider.Imdb)?.TrimStart('t') ?? string.Empty, NumberStyles.Any, _usCulture, out var imdbId);
@@ -126,7 +142,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             _logger.LogDebug("Search query: {query}", string.Join(", ", options.Keys.Select(x => $"{x}: {options[x]}")));
 
-            var searchResponse = await OpenSubtitlesHandler.OpenSubtitles.SearchSubtitlesAsync(options, cancellationToken).ConfigureAwait(false);
+            var searchResponse = await OpenSubtitlesHandler.OpenSubtitles.SearchSubtitlesAsync(options, _apiKey, cancellationToken).ConfigureAwait(false);
 
             if (!searchResponse.Ok)
             {
@@ -170,6 +186,11 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 throw new ArgumentException("Missing param", nameof(id));
             }
 
+            if (string.IsNullOrWhiteSpace(_apiKey))
+            {
+                throw new AuthenticationException("API key not set up");
+            }
+
             if (_login?.User?.RemainingDownloads <= 0)
             {
                 if (_limitReset < DateTime.UtcNow)
@@ -201,7 +222,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             var fid = int.Parse(ossId, _usCulture);
 
-            var info = await OpenSubtitlesHandler.OpenSubtitles.GetSubtitleLinkAsync(fid, _login, cancellationToken).ConfigureAwait(false);
+            var info = await OpenSubtitlesHandler.OpenSubtitles.GetSubtitleLinkAsync(fid, _login, _apiKey, cancellationToken).ConfigureAwait(false);
 
             if (info.Data.Message != null && info.Data.Message.Contains("UTC", StringComparison.Ordinal))
             {
@@ -285,23 +306,21 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 return;
             }
 
-            var key = GetOptions().ApiKey;
-            if (!string.IsNullOrWhiteSpace(key))
+            if (string.IsNullOrWhiteSpace(_apiKey))
             {
-                OpenSubtitlesHandler.OpenSubtitles.SetToken(key);
+                throw new AuthenticationException("API key is not set up");
             }
 
             var options = GetOptions();
-            if (options.Username.Length == 0 || options.Password.Length == 0 || options.ApiKey.Length == 0)
+            if (string.IsNullOrWhiteSpace(options.Username) || string.IsNullOrWhiteSpace(options.Password))
             {
-                _logger.LogWarning("The username, password or API key has no value.");
-                return;
+                throw new AuthenticationException("Account username and/or password are not set up");
             }
 
             var loginResponse = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(
                 options.Username,
                 options.Password,
-                null,
+                _apiKey,
                 cancellationToken).ConfigureAwait(false);
 
             if (!loginResponse.Ok)
@@ -324,7 +343,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 return;
             }
 
-            var infoResponse = await OpenSubtitlesHandler.OpenSubtitles.GetUserInfo(_login, cancellationToken).ConfigureAwait(false);
+            var infoResponse = await OpenSubtitlesHandler.OpenSubtitles.GetUserInfo(_login, _apiKey, cancellationToken).ConfigureAwait(false);
             if (infoResponse.Ok)
             {
                 _login.User = infoResponse.Data.Data;

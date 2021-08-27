@@ -23,6 +23,11 @@ export default function (view, params) {
             const password = form.querySelector('#password').value;
             const apiKey = form.querySelector('#apikey').value;
 
+            if (!username || !password || !apiKey) {
+                Dashboard.processErrorResponse({statusText: "Account info is incomplete"});
+                return;
+            }
+
             const el = form.querySelector('#ossresponse');
             
             const data = JSON.stringify({ Username: username, Password: password, ApiKey: apiKey });
