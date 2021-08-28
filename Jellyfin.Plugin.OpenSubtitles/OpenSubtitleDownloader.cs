@@ -29,7 +29,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
         private static readonly CultureInfo _usCulture = CultureInfo.ReadOnly(new CultureInfo("en-US"));
         private readonly ILogger<OpenSubtitleDownloader> _logger;
         private LoginInfo? _login;
-        private DateTime _limitReset;
+        private DateTime? _limitReset;
         private string _apiKey;
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version!.ToString();
 
-            OpenSubtitlesHandler.Util.Instance = new Util(httpClientFactory, version);
+            OpenSubtitlesRequestHelper.Instance = new OpenSubtitlesRequestHelper(httpClientFactory, version);
 
             OpenSubtitlesPlugin.Instance!.ConfigurationChanged += (_, _) =>
             {
@@ -101,7 +101,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             {
                 await using (var fileStream = File.OpenRead(request.MediaPath))
                 {
-                    hash = Util.ComputeHash(fileStream);
+                    hash = OpenSubtitlesRequestHelper.ComputeHash(fileStream);
                 }
             }
             catch (IOException e)
@@ -150,31 +150,39 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 return Enumerable.Empty<RemoteSubtitleInfo>();
             }
 
-            bool MediaFilter(OpenSubtitlesHandler.Models.Responses.Data x) =>
-                x.Attributes.FeatureDetails.FeatureType == (request.ContentType == VideoContentType.Episode ? "Episode" : "Movie") && request.ContentType == VideoContentType.Episode
-                    ? x.Attributes.FeatureDetails.SeasonNumber == request.ParentIndexNumber && x.Attributes.FeatureDetails.EpisodeNumber == request.IndexNumber
-                    : x.Attributes.FeatureDetails.ImdbId == imdbId;
+            bool MediaFilter(ResponseData x) =>
+                x.Attributes?.FeatureDetails?.FeatureType == (request.ContentType == VideoContentType.Episode ? "Episode" : "Movie")
+                && request.ContentType == VideoContentType.Episode
+                    ? x.Attributes.FeatureDetails.SeasonNumber == request.ParentIndexNumber
+                      && x.Attributes.FeatureDetails.EpisodeNumber == request.IndexNumber
+                    : x.Attributes?.FeatureDetails?.ImdbId == imdbId;
 
-            return searchResponse.Data.Where(x => MediaFilter(x) && (!request.IsPerfectMatch || (x.Attributes.MoviehashMatch ?? false)))
-                .OrderByDescending(x => x.Attributes.MoviehashMatch ?? false)
-                .ThenByDescending(x => x.Attributes.DownloadCount)
-                .ThenByDescending(x => x.Attributes.Ratings)
-                .ThenByDescending(x => x.Attributes.FromTrusted)
+            if (searchResponse.Data == null)
+            {
+                return Enumerable.Empty<RemoteSubtitleInfo>();
+            }
+
+            return searchResponse.Data
+                .Where(x => MediaFilter(x) && (!request.IsPerfectMatch || (x.Attributes?.MovieHashMatch ?? false)))
+                .OrderByDescending(x => x.Attributes?.MovieHashMatch ?? false)
+                .ThenByDescending(x => x.Attributes?.DownloadCount)
+                .ThenByDescending(x => x.Attributes?.Ratings)
+                .ThenByDescending(x => x.Attributes?.FromTrusted)
                 .Select(i => new RemoteSubtitleInfo
                 {
-                    Author = i.Attributes.Uploader.Name,
-                    Comment = i.Attributes.Comments,
-                    CommunityRating = i.Attributes.Ratings,
-                    DownloadCount = i.Attributes.DownloadCount,
-                    Format = i.Attributes.Format,
+                    Author = i.Attributes?.Uploader?.Name,
+                    Comment = i.Attributes?.Comments,
+                    CommunityRating = i.Attributes?.Ratings,
+                    DownloadCount = i.Attributes?.DownloadCount,
+                    Format = i.Attributes?.Format,
                     ProviderName = Name,
                     ThreeLetterISOLanguageName = request.Language,
 
                     // new API (currently) does not return the format
-                    Id = $"{i.Attributes.Format ?? "srt"}-{request.Language}-{i.Attributes.Files[0].FileId}",
-                    Name = i.Attributes.Release,
-                    DateCreated = i.Attributes.UploadDate,
-                    IsHashMatch = i.Attributes.MoviehashMatch
+                    Id = $"{i.Attributes?.Format ?? "srt"}-{request.Language}-{i.Attributes?.Files[0].FileId}",
+                    Name = i.Attributes?.Release,
+                    DateCreated = i.Attributes?.UploadDate,
+                    IsHashMatch = i.Attributes?.MovieHashMatch
                 })
                 .Where(i => !string.Equals(i.Format, "sub", StringComparison.OrdinalIgnoreCase) && !string.Equals(i.Format, "idx", StringComparison.OrdinalIgnoreCase));
         }
@@ -214,6 +222,10 @@ namespace Jellyfin.Plugin.OpenSubtitles
             }
 
             await Login(cancellationToken).ConfigureAwait(false);
+            if (_login == null)
+            {
+                throw new AuthenticationException("Unable to login");
+            }
 
             var idParts = id.Split('-', 3);
             var format = idParts[0];
@@ -224,7 +236,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             var info = await OpenSubtitlesHandler.OpenSubtitles.GetSubtitleLinkAsync(fid, _login, _apiKey, cancellationToken).ConfigureAwait(false);
 
-            if (info.Data.Message != null && info.Data.Message.Contains("UTC", StringComparison.Ordinal))
+            if (info.Data?.Message != null && info.Data.Message.Contains("UTC", StringComparison.Ordinal))
             {
                 // "Your quota will be renewed in 20 hours and 52 minutes (2021-08-24 12:02:10 UTC) "
                 var str = info.Data.Message.Split('(')[1].Trim().Replace(" UTC)", "Z", StringComparison.Ordinal);
@@ -237,9 +249,9 @@ namespace Jellyfin.Plugin.OpenSubtitles
             {
                 switch (info.Code)
                 {
-                    case HttpStatusCode.NotAcceptable when info.Data.Remaining <= 0:
+                    case HttpStatusCode.NotAcceptable when info.Data?.Remaining <= 0:
                     {
-                        if (_login?.User != null)
+                        if (_login.User != null)
                         {
                             _login.User.RemainingDownloads = 0;
                         }
@@ -266,13 +278,13 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 throw new HttpRequestException(msg);
             }
 
-            if (_login?.User != null)
+            if (_login.User != null)
             {
-                _login.User.RemainingDownloads = info.Data.Remaining;
+                _login.User.RemainingDownloads = info.Data?.Remaining;
                 _logger.LogInformation("Remaining downloads: {RemainingDownloads}", _login.User.RemainingDownloads);
             }
 
-            if (string.IsNullOrWhiteSpace(info.Data.Link))
+            if (string.IsNullOrWhiteSpace(info.Data?.Link))
             {
                 var msg = string.Format(
                     CultureInfo.InvariantCulture,
@@ -285,7 +297,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             var res = await OpenSubtitlesHandler.OpenSubtitles.DownloadSubtitleAsync(info.Data.Link, cancellationToken).ConfigureAwait(false);
 
-            if (!res.Ok)
+            if (!res.Ok || res.Data == null)
             {
                 var msg = string.Format(
                     CultureInfo.InvariantCulture,
@@ -333,7 +345,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             await UpdateUserInfo(cancellationToken).ConfigureAwait(false);
 
-            _logger.LogDebug("Logged in, download limit reset at {ResetTime}, token expiration at {ExpirationDate}", _limitReset, _login.ExpirationDate);
+            _logger.LogDebug("Logged in, download limit reset at {ResetTime}, token expiration at {ExpirationDate}", _limitReset, _login?.ExpirationDate);
         }
 
         private async Task UpdateUserInfo(CancellationToken cancellationToken)
@@ -346,8 +358,8 @@ namespace Jellyfin.Plugin.OpenSubtitles
             var infoResponse = await OpenSubtitlesHandler.OpenSubtitles.GetUserInfo(_login, _apiKey, cancellationToken).ConfigureAwait(false);
             if (infoResponse.Ok)
             {
-                _login.User = infoResponse.Data.Data;
-                _limitReset = _login.User.ResetTime;
+                _login.User = infoResponse.Data?.Data;
+                _limitReset = _login.User?.ResetTime;
             }
         }
 

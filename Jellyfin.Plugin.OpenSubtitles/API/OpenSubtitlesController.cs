@@ -56,9 +56,12 @@ namespace Jellyfin.Plugin.OpenSubtitles.API
                 return Unauthorized(new { Message = msg });
             }
 
-            await OpenSubtitlesHandler.OpenSubtitles.LogOutAsync(response.Data, body.ApiKey, CancellationToken.None).ConfigureAwait(false);
+            if (response.Data != null)
+            {
+                await OpenSubtitlesHandler.OpenSubtitles.LogOutAsync(response.Data, body.ApiKey, CancellationToken.None).ConfigureAwait(false);
+            }
 
-            return Ok(new { Downloads = response.Data.User.AllowedDownloads });
+            return Ok(new { Downloads = response.Data?.User?.AllowedDownloads ?? 0 });
         }
     }
 }
