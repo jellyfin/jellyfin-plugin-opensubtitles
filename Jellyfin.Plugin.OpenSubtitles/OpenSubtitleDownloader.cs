@@ -140,7 +140,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 options.Add("moviehash_match", "only");
             }
 
-            _logger.LogDebug("Search query: {Query}", string.Join(", ", options.Keys.Select(x => $"{x}: {options[x]}")));
+            _logger.LogDebug("Search query: {Query}", options);
 
             var searchResponse = await OpenSubtitlesHandler.OpenSubtitles.SearchSubtitlesAsync(options, _apiKey, cancellationToken).ConfigureAwait(false);
 
