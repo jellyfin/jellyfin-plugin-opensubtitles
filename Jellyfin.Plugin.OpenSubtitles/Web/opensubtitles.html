@@ -1,18 +1,30 @@
 ﻿<div id="OpenSubtitlesConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-controller="__plugin/opensubtitlesjs">
-
     <div data-role="content">
         <div class="content-primary">
+            <h3 class="sectionTitle sectionTitle-cards"><b>In order for this plugin to work you need to enter your OpenSubtitles.com account info below</b></h3>
             <form id="OpenSubtitlesConfigForm">
                 <div class="inputContainer">
                     <input is="emby-input" type="text" id="username" label="${LabelUsername}" />
                     <div class="fieldDescription">
-                        <a is="emby-linkbutton" class="button-link" target="_blank" href="http://www.opensubtitles.org/">Register</a>
+                        <a is="emby-linkbutton" class="button-link" target="_blank" href="https://www.opensubtitles.com">Register</a>
+                        or
+                        <a is="emby-linkbutton" class="button-link" target="_blank" href="https://www.opensubtitles.com/users/import">Import your account from opensubtitles.org</a>
                     </div>
                 </div>
                 <div class="inputContainer">
                     <input is="emby-input" type="password" id="password" label="${LabelPassword}" />
                     <div class="fieldDescription">You can utilize this plugin by editing a library and modifying the options for subtitle downloads.</div>
                 </div>
+                <div class="inputContainer">
+                    <input is="emby-input" type="password" id="apikey" label="${HeaderApiKey}:" />
+                    <div class="fieldDescription">
+                        <a is="emby-linkbutton" class="button-link" target="_blank" href="https://www.opensubtitles.com/en/consumers/new">Create API Key</a>
+                    </div>
+                    <div class="fieldDescription">
+                        <a is="emby-linkbutton" class="button-link" target="_blank" href="https://92500a62-df9e-42ed-82a4-e6b3eeb89365.site.hbuptime.com/">OpenSubtitles API Status</a>
+                    </div>
+                </div>
+                <div class="fieldDescription" id="ossresponse"></div>
                 <div>
                     <button is="emby-button" type="submit" class="raised button-submit block">
                         <span>${Save}</span>

@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Security.Authentication;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.OpenSubtitles.Configuration;
@@ -11,10 +14,10 @@ using MediaBrowser.Common.Extensions;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Subtitles;
 using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.IO;
 using MediaBrowser.Model.Providers;
 using Microsoft.Extensions.Logging;
 using OpenSubtitlesHandler;
+using OpenSubtitlesHandler.Models.Responses;
 
 namespace Jellyfin.Plugin.OpenSubtitles
 {
@@ -23,24 +26,33 @@ namespace Jellyfin.Plugin.OpenSubtitles
     /// </summary>
     public class OpenSubtitleDownloader : ISubtitleProvider
     {
-        private static readonly CultureInfo UsCulture = CultureInfo.ReadOnly(new CultureInfo("en-US"));
+        private static readonly CultureInfo _usCulture = CultureInfo.ReadOnly(new CultureInfo("en-US"));
         private readonly ILogger<OpenSubtitleDownloader> _logger;
-        private readonly IFileSystem _fileSystem;
-        private DateTime _lastRateLimitException;
-        private DateTime _lastLogin;
-        private int _rateLimitLeft = 40;
+        private LoginInfo? _login;
+        private DateTime _limitReset;
+        private string _apiKey;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OpenSubtitleDownloader"/> class.
         /// </summary>
         /// <param name="logger">Instance of the <see cref="ILogger{OpenSubtitleDownloader}"/> interface.</param>
-        /// <param name="fileSystem">Instance of the <see cref="IFileSystem"/> interface.</param>
-        public OpenSubtitleDownloader(
-            ILogger<OpenSubtitleDownloader> logger,
-            IFileSystem fileSystem)
+        /// <param name="httpClientFactory">The <see cref="IHttpClientFactory"/> for creating Http Clients.</param>
+        public OpenSubtitleDownloader(ILogger<OpenSubtitleDownloader> logger, IHttpClientFactory httpClientFactory)
         {
             _logger = logger;
-            _fileSystem = fileSystem;
+
+            var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version!.ToString();
+
+            OpenSubtitlesHandler.Util.Instance = new Util(httpClientFactory, version);
+
+            OpenSubtitlesPlugin.Instance!.ConfigurationChanged += (_, _) =>
+            {
+                _apiKey = GetOptions().ApiKey;
+                // force a login next time a request is made
+                _login = null;
+            };
+
+            _apiKey = GetOptions().ApiKey;
         }
 
         /// <inheritdoc />
@@ -49,11 +61,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
         /// <inheritdoc />
         public IEnumerable<VideoContentType> SupportedMediaTypes
-            => new[]
-            {
-                VideoContentType.Episode,
-                VideoContentType.Movie
-            };
+            => new[] { VideoContentType.Episode, VideoContentType.Movie };
 
         /// <inheritdoc />
         public Task<SubtitleResponse> GetSubtitles(string id, CancellationToken cancellationToken)
@@ -62,33 +70,22 @@ namespace Jellyfin.Plugin.OpenSubtitles
         /// <inheritdoc />
         public async Task<IEnumerable<RemoteSubtitleInfo>> Search(SubtitleSearchRequest request, CancellationToken cancellationToken)
         {
-            var imdbIdText = request.GetProviderId(MetadataProvider.Imdb);
-            long imdbId = 0;
-
-            switch (request.ContentType)
+            if (request == null)
             {
-                case VideoContentType.Episode:
-                    if (!request.IndexNumber.HasValue || !request.ParentIndexNumber.HasValue || string.IsNullOrEmpty(request.SeriesName))
-                    {
-                        _logger.LogDebug("Episode information missing");
-                        return Enumerable.Empty<RemoteSubtitleInfo>();
-                    }
+                throw new ArgumentNullException(nameof(request));
+            }
 
-                    break;
-                case VideoContentType.Movie:
-                    if (string.IsNullOrEmpty(request.Name))
-                    {
-                        _logger.LogDebug("Movie name missing");
-                        return Enumerable.Empty<RemoteSubtitleInfo>();
-                    }
+            if (string.IsNullOrWhiteSpace(_apiKey))
+            {
+                throw new AuthenticationException("API key not set up");
+            }
 
-                    if (string.IsNullOrWhiteSpace(imdbIdText) || !long.TryParse(imdbIdText.TrimStart('t'), NumberStyles.Any, UsCulture, out imdbId))
-                    {
-                        _logger.LogDebug("Imdb id missing");
-                        return Enumerable.Empty<RemoteSubtitleInfo>();
-                    }
+            long.TryParse(request.GetProviderId(MetadataProvider.Imdb)?.TrimStart('t') ?? string.Empty, NumberStyles.Any, _usCulture, out var imdbId);
 
-                    break;
+            if (request.ContentType == VideoContentType.Episode && (!request.IndexNumber.HasValue || !request.ParentIndexNumber.HasValue || string.IsNullOrEmpty(request.SeriesName)))
+            {
+                _logger.LogDebug("Episode information missing");
+                return Enumerable.Empty<RemoteSubtitleInfo>();
             }
 
             if (string.IsNullOrEmpty(request.MediaPath))
@@ -99,232 +96,259 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             await Login(cancellationToken).ConfigureAwait(false);
 
-            var subLanguageId = NormalizeLanguage(request.Language);
-
             string hash;
-            using (var fileStream = File.OpenRead(request.MediaPath))
+            try
             {
-                hash = Utilities.ComputeHash(fileStream);
+                await using (var fileStream = File.OpenRead(request.MediaPath))
+                {
+                    hash = Util.ComputeHash(fileStream);
+                }
+            }
+            catch (IOException e)
+            {
+                throw new IOException(string.Format(CultureInfo.InvariantCulture, "IOException while computing hash for {0}", request.MediaPath), e);
             }
 
-            var fileInfo = _fileSystem.GetFileInfo(request.MediaPath);
-            var movieByteSize = fileInfo.Length;
-            var searchImdbId = request.ContentType == VideoContentType.Movie ? imdbId.ToString(UsCulture) : string.Empty;
-            var subtitleSearchParameters = request.ContentType == VideoContentType.Episode
-                ? new List<SubtitleSearchParameters>
-                {
-                    new SubtitleSearchParameters(
-                        subLanguageId,
-                        query: request.SeriesName,
-                        season: request.ParentIndexNumber!.Value.ToString(UsCulture),
-                        episode: request.IndexNumber!.Value.ToString(UsCulture))
-                }
-                : new List<SubtitleSearchParameters>
-                {
-                    new SubtitleSearchParameters(subLanguageId, imdbid: searchImdbId),
-                    new SubtitleSearchParameters(subLanguageId, query: request.Name, imdbid: searchImdbId)
-                };
-            var parms = new List<SubtitleSearchParameters>
+            var options = new Dictionary<string, string>
             {
-                new SubtitleSearchParameters(
-                    subLanguageId,
-                    movieHash: hash,
-                    movieByteSize: movieByteSize,
-                    imdbid: searchImdbId),
+                { "languages", request.TwoLetterISOLanguageName },
+                { "moviehash", hash },
+                { "type", request.ContentType == VideoContentType.Episode ? "episode" : "movie" }
             };
-            parms.AddRange(subtitleSearchParameters);
 
-            if (_rateLimitLeft == 0)
+            // If we have the IMDb ID we use that, otherwise query with the details
+            if (imdbId != 0)
             {
-                await Task.Delay(1000, cancellationToken)
-                    .ConfigureAwait(false);
+                options.Add("imdb_id", imdbId.ToString(_usCulture));
             }
-
-            var searchResponse = await OpenSubtitlesHandler.OpenSubtitles.SearchSubtitlesAsync(parms.ToArray(), cancellationToken).ConfigureAwait(false);
-
-            var searchResult = searchResponse.Item1;
-            _rateLimitLeft = searchResponse.Item2 ?? _rateLimitLeft;
-
-            if (searchResponse.Item2 != null)
+            else
             {
-                if (_rateLimitLeft <= 4)
+                if (request.ContentType == VideoContentType.Episode)
                 {
-                    await Task.Delay(250, cancellationToken)
-                        .ConfigureAwait(false);
+                    options.Add("query", request.SeriesName.Length <= 2 ? $"{request.SeriesName} {request.ProductionYear}" : request.SeriesName);
+                    options.Add("season_number", request.ParentIndexNumber?.ToString(_usCulture) ?? string.Empty);
+                    options.Add("episode_number", request.IndexNumber?.ToString(_usCulture) ?? string.Empty);
+                }
+                else
+                {
+                    options.Add("query", request.Name.Length <= 2 ? $"{request.Name} {request.ProductionYear}" : request.Name);
                 }
             }
 
-            if (searchResult is not MethodResponseSubtitleSearch subtitleSearchResult)
+            if (request.IsPerfectMatch)
             {
-                _logger.LogError(
-                    "Invalid response type. Name: {Name}, Message: {Message}, Status: {Status}",
-                    searchResult.Name,
-                    searchResult.Message,
-                    searchResult.Status);
+                options.Add("moviehash_match", "only");
+            }
+
+            _logger.LogDebug("Search query: {Query}", options);
+
+            var searchResponse = await OpenSubtitlesHandler.OpenSubtitles.SearchSubtitlesAsync(options, _apiKey, cancellationToken).ConfigureAwait(false);
+
+            if (!searchResponse.Ok)
+            {
+                _logger.LogError("Invalid response: {Code} - {Body}", searchResponse.Code, searchResponse.Body);
                 return Enumerable.Empty<RemoteSubtitleInfo>();
             }
 
-            Predicate<SubtitleSearchResult> mediaFilter =
-                x =>
-                    request.ContentType == VideoContentType.Episode
-                        ? !string.IsNullOrEmpty(x.SeriesSeason) && !string.IsNullOrEmpty(x.SeriesEpisode) &&
-                          int.Parse(x.SeriesSeason, UsCulture) == request.ParentIndexNumber &&
-                          int.Parse(x.SeriesEpisode, UsCulture) == request.IndexNumber
-                        : !string.IsNullOrEmpty(x.IDMovieImdb) && long.Parse(x.IDMovieImdb, UsCulture) == imdbId;
+            bool MediaFilter(OpenSubtitlesHandler.Models.Responses.Data x) =>
+                x.Attributes.FeatureDetails.FeatureType == (request.ContentType == VideoContentType.Episode ? "Episode" : "Movie") && request.ContentType == VideoContentType.Episode
+                    ? x.Attributes.FeatureDetails.SeasonNumber == request.ParentIndexNumber && x.Attributes.FeatureDetails.EpisodeNumber == request.IndexNumber
+                    : x.Attributes.FeatureDetails.ImdbId == imdbId;
 
-            var results = subtitleSearchResult.Results;
-
-            // Avoid implicitly captured closure
-            var hasCopy = hash;
-
-            return results.Where(x => x.SubBad == "0" && mediaFilter(x) && (!request.IsPerfectMatch || string.Equals(x.MovieHash, hash, StringComparison.OrdinalIgnoreCase)))
-                .OrderBy(x => (string.Equals(x.MovieHash, hash, StringComparison.OrdinalIgnoreCase) ? 0 : 1))
-                .ThenBy(x => Math.Abs(long.Parse(x.MovieByteSize, UsCulture) - movieByteSize))
-                .ThenByDescending(x => int.Parse(x.SubDownloadsCnt, UsCulture))
-                .ThenByDescending(x => double.Parse(x.SubRating, UsCulture))
+            return searchResponse.Data.Where(x => MediaFilter(x) && (!request.IsPerfectMatch || (x.Attributes.MoviehashMatch ?? false)))
+                .OrderByDescending(x => x.Attributes.MoviehashMatch ?? false)
+                .ThenByDescending(x => x.Attributes.DownloadCount)
+                .ThenByDescending(x => x.Attributes.Ratings)
+                .ThenByDescending(x => x.Attributes.FromTrusted)
                 .Select(i => new RemoteSubtitleInfo
                 {
-                    Author = i.UserNickName,
-                    Comment = i.SubAuthorComment,
-                    CommunityRating = float.Parse(i.SubRating, UsCulture),
-                    DownloadCount = int.Parse(i.SubDownloadsCnt, UsCulture),
-                    Format = i.SubFormat,
+                    Author = i.Attributes.Uploader.Name,
+                    Comment = i.Attributes.Comments,
+                    CommunityRating = i.Attributes.Ratings,
+                    DownloadCount = i.Attributes.DownloadCount,
+                    Format = i.Attributes.Format,
                     ProviderName = Name,
-                    ThreeLetterISOLanguageName = i.SubLanguageID,
+                    ThreeLetterISOLanguageName = request.Language,
 
-                    Id = i.SubFormat + "-" + i.SubLanguageID + "-" + i.IDSubtitleFile,
-
-                    Name = i.SubFileName,
-                    DateCreated = DateTime.Parse(i.SubAddDate, UsCulture),
-                    IsHashMatch = i.MovieHash == hasCopy
+                    // new API (currently) does not return the format
+                    Id = $"{i.Attributes.Format ?? "srt"}-{request.Language}-{i.Attributes.Files[0].FileId}",
+                    Name = i.Attributes.Release,
+                    DateCreated = i.Attributes.UploadDate,
+                    IsHashMatch = i.Attributes.MoviehashMatch
                 })
                 .Where(i => !string.Equals(i.Format, "sub", StringComparison.OrdinalIgnoreCase) && !string.Equals(i.Format, "idx", StringComparison.OrdinalIgnoreCase));
         }
 
-        private async Task<SubtitleResponse> GetSubtitlesInternal(
-            string id,
-            CancellationToken cancellationToken)
+        private async Task<SubtitleResponse> GetSubtitlesInternal(string id, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(id))
             {
-                throw new ArgumentNullException(nameof(id));
+                throw new ArgumentException("Missing param", nameof(id));
             }
+
+            if (string.IsNullOrWhiteSpace(_apiKey))
+            {
+                throw new AuthenticationException("API key not set up");
+            }
+
+            if (_login?.User?.RemainingDownloads <= 0)
+            {
+                if (_limitReset < DateTime.UtcNow)
+                {
+                    _logger.LogDebug("Reset time passed, updating user info");
+
+                    await UpdateUserInfo(cancellationToken).ConfigureAwait(false);
+
+                    // this shouldn't happen?
+                    if (_login.User.RemainingDownloads <= 0)
+                    {
+                        _logger.LogError("OpenSubtitles download limit reached");
+                        throw new RateLimitExceededException("OpenSubtitles download limit reached");
+                    }
+                }
+                else
+                {
+                    _logger.LogError("OpenSubtitles download limit reached");
+                    throw new RateLimitExceededException("OpenSubtitles download limit reached");
+                }
+            }
+
+            await Login(cancellationToken).ConfigureAwait(false);
 
             var idParts = id.Split('-', 3);
             var format = idParts[0];
             var language = idParts[1];
             var ossId = idParts[2];
 
-            var downloadsList = new[] { int.Parse(ossId, UsCulture) };
+            var fid = int.Parse(ossId, _usCulture);
 
-            await Login(cancellationToken).ConfigureAwait(false);
+            var info = await OpenSubtitlesHandler.OpenSubtitles.GetSubtitleLinkAsync(fid, _login, _apiKey, cancellationToken).ConfigureAwait(false);
 
-            if ((DateTime.UtcNow - _lastRateLimitException).TotalHours < 1)
+            if (info.Data.Message != null && info.Data.Message.Contains("UTC", StringComparison.Ordinal))
             {
-                throw new RateLimitExceededException("OpenSubtitles rate limit reached");
+                // "Your quota will be renewed in 20 hours and 52 minutes (2021-08-24 12:02:10 UTC) "
+                var str = info.Data.Message.Split('(')[1].Trim().Replace(" UTC)", "Z", StringComparison.Ordinal);
+                _limitReset = DateTime.Parse(str, _usCulture, DateTimeStyles.AdjustToUniversal);
+
+                _logger.LogDebug("Updated expiration time to {ResetTime}", _limitReset);
             }
 
-            if (_rateLimitLeft == 0)
+            if (!info.Ok)
             {
-                await Task.Delay(1000, cancellationToken)
-                    .ConfigureAwait(false);
-            }
-
-            var downloadResponse = await OpenSubtitlesHandler.OpenSubtitles.DownloadSubtitlesAsync(downloadsList, cancellationToken).ConfigureAwait(false);
-
-            var downloadResult = downloadResponse.Item1;
-            _rateLimitLeft = downloadResponse.Item2 ?? _rateLimitLeft;
-
-            if (downloadResponse.Item2 != null)
-            {
-                if (_rateLimitLeft <= 4)
+                switch (info.Code)
                 {
-                    await Task.Delay(250, cancellationToken)
-                        .ConfigureAwait(false);
+                    case HttpStatusCode.NotAcceptable when info.Data.Remaining <= 0:
+                    {
+                        if (_login?.User != null)
+                        {
+                            _login.User.RemainingDownloads = 0;
+                        }
+
+                        _logger.LogError("OpenSubtitles download limit reached");
+                        throw new RateLimitExceededException("OpenSubtitles download limit reached");
+                    }
+
+                    case HttpStatusCode.Unauthorized:
+                        // JWT token expired, obtain a new one and try again?
+                        _login = null;
+                        return await GetSubtitlesInternal(id, cancellationToken).ConfigureAwait(false);
                 }
+
+                var msg = info.Body.Contains("<html", StringComparison.OrdinalIgnoreCase) ? "[html]" : info.Body;
+
+                msg = string.Format(
+                    CultureInfo.InvariantCulture,
+                    "Invalid response for file {0}: {1}\n\n{2}",
+                    fid,
+                    info.Code,
+                    msg);
+
+                throw new HttpRequestException(msg);
             }
 
-            if ((downloadResult.Status ?? string.Empty).IndexOf("407", StringComparison.OrdinalIgnoreCase) != -1)
+            if (_login?.User != null)
             {
-                _lastRateLimitException = DateTime.UtcNow;
-                throw new RateLimitExceededException("OpenSubtitles daily limit reached");
+                _login.User.RemainingDownloads = info.Data.Remaining;
+                _logger.LogInformation("Remaining downloads: {RemainingDownloads}", _login.User.RemainingDownloads);
             }
 
-            if (downloadResult is not MethodResponseSubtitleDownload subtitleDownloadResult)
-            {
-                throw new OpenApiException($"Invalid response type. Name: {downloadResult.Name}, Message: {downloadResult.Message}, Status: {downloadResult.Status}");
-            }
-
-            _lastRateLimitException = DateTime.MinValue;
-
-            if (subtitleDownloadResult.Results.Count == 0)
+            if (string.IsNullOrWhiteSpace(info.Data.Link))
             {
                 var msg = string.Format(
                     CultureInfo.InvariantCulture,
-                    "Subtitle with Id {0} was not found. Name: {1}. Status: {2}. Message: {3}",
-                    ossId,
-                    downloadResult.Name ?? string.Empty,
-                    downloadResult.Status ?? string.Empty,
-                    downloadResult.Message ?? string.Empty);
+                    "Failed to obtain download link for file {0}: {1}",
+                    fid,
+                    info.Code);
 
-                throw new ResourceNotFoundException(msg);
+                throw new HttpRequestException(msg);
             }
 
-            var data = Convert.FromBase64String(subtitleDownloadResult.Results[0].Data);
+            var res = await OpenSubtitlesHandler.OpenSubtitles.DownloadSubtitleAsync(info.Data.Link, cancellationToken).ConfigureAwait(false);
 
-            return new SubtitleResponse
+            if (!res.Ok)
             {
-                Format = format,
-                Language = language,
+                var msg = string.Format(
+                    CultureInfo.InvariantCulture,
+                    "Subtitle with Id {0} could not be downloaded: {1}",
+                    ossId,
+                    res.Code);
 
-                Stream = new MemoryStream(Utilities.Decompress(new MemoryStream(data)))
-            };
+                throw new HttpRequestException(msg);
+            }
+
+            return new SubtitleResponse { Format = format, Language = language, Stream = new MemoryStream(Encoding.UTF8.GetBytes(res.Data)) };
         }
 
         private async Task Login(CancellationToken cancellationToken)
         {
-            if ((DateTime.UtcNow - _lastLogin).TotalSeconds < 60)
+            if (_login != null && DateTime.UtcNow < _login.ExpirationDate)
             {
                 return;
             }
 
-            var options = GetOptions();
-            if (options.Username.Length == 0 || options.Password.Length == 0)
+            if (string.IsNullOrWhiteSpace(_apiKey))
             {
-                _logger.LogWarning("The username or password has no value. Attempting to access the service without an account");
-                return;
+                throw new AuthenticationException("API key is not set up");
+            }
+
+            var options = GetOptions();
+            if (string.IsNullOrWhiteSpace(options.Username) || string.IsNullOrWhiteSpace(options.Password))
+            {
+                throw new AuthenticationException("Account username and/or password are not set up");
             }
 
             var loginResponse = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(
                 options.Username,
                 options.Password,
-                "en",
+                _apiKey,
                 cancellationToken).ConfigureAwait(false);
 
-            if (loginResponse.Item2 == 1)
+            if (!loginResponse.Ok)
             {
-                await Task.Delay(1000, cancellationToken)
-                    .ConfigureAwait(false);
-            }
-
-            if (!(loginResponse.Item1 is MethodResponseLogIn))
-            {
+                _logger.LogError("Login failed: {Code} - {Body}", loginResponse.Code, loginResponse.Body);
                 throw new AuthenticationException("Authentication to OpenSubtitles failed.");
             }
 
-            _rateLimitLeft = loginResponse.Item2 ?? _rateLimitLeft;
-            _lastLogin = DateTime.UtcNow;
+            _login = loginResponse.Data;
+
+            await UpdateUserInfo(cancellationToken).ConfigureAwait(false);
+
+            _logger.LogDebug("Logged in, download limit reset at {ResetTime}, token expiration at {ExpirationDate}", _limitReset, _login.ExpirationDate);
         }
 
-        private static string NormalizeLanguage(string language)
+        private async Task UpdateUserInfo(CancellationToken cancellationToken)
         {
-            // Problem with Greek subtitle download #1349
-            if (string.Equals(language, "gre", StringComparison.OrdinalIgnoreCase))
+            if (_login == null)
             {
-                return "ell";
+                return;
             }
 
-            return language;
+            var infoResponse = await OpenSubtitlesHandler.OpenSubtitles.GetUserInfo(_login, _apiKey, cancellationToken).ConfigureAwait(false);
+            if (infoResponse.Ok)
+            {
+                _login.User = infoResponse.Data.Data;
+                _limitReset = _login.User.ResetTime;
+            }
         }
 
         private PluginConfiguration GetOptions()
