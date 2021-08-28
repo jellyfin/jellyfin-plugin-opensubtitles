@@ -1,7 +1,16 @@
+using System.Text.Json.Serialization;
+
 namespace OpenSubtitlesHandler.Models
 {
+    /// <summary>
+    /// The jwt payload.
+    /// </summary>
     public class JWTPayload
     {
-        public long exp { get; set; }
+        /// <summary>
+        /// Gets or sets the expiration timestamp.
+        /// </summary>
+        [JsonPropertyName("exp")]
+        public long Exp { get; set; }
     }
 }

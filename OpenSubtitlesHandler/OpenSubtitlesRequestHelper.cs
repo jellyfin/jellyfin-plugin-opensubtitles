@@ -4,32 +4,44 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Mime;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Net.Http.Headers;
 
 namespace OpenSubtitlesHandler
 {
-    public class Util
+    /// <summary>
+    /// Http util helper.
+    /// </summary>
+    public class OpenSubtitlesRequestHelper
     {
         private readonly IHttpClientFactory _clientFactory;
         private readonly string _version;
 
-        public static Util Instance { get; set; }
-
-        public Util(IHttpClientFactory factory, string version)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="OpenSubtitlesRequestHelper"/> class.
+        /// </summary>
+        /// <param name="factory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
+        /// <param name="version">The plugin version.</param>
+        public OpenSubtitlesRequestHelper(IHttpClientFactory factory, string version)
         {
-            this._clientFactory = factory;
-            this._version = version;
+            _clientFactory = factory;
+            _version = version;
         }
 
         /// <summary>
-        /// Compute movie hash
+        /// Gets or sets the current instance.
         /// </summary>
-        /// <returns>The hash as Hexadecimal string</returns>
+        public static OpenSubtitlesRequestHelper? Instance { get; set; }
+
+        /// <summary>
+        /// Compute movie hash.
+        /// </summary>
+        /// <param name="stream">The input stream.</param>
+        /// <returns>The hash as Hexadecimal string.</returns>
         public static string ComputeHash(Stream stream)
         {
             var hash = ComputeMovieHash(stream);
@@ -37,9 +49,9 @@ namespace OpenSubtitlesHandler
         }
 
         /// <summary>
-        /// Compute hash of specified movie stream
+        /// Compute hash of specified movie stream.
         /// </summary>
-        /// <returns>Hash of the movie</returns>
+        /// <returns>Hash of the movie.</returns>
         private static byte[] ComputeMovieHash(Stream input)
         {
             using (input)
@@ -67,31 +79,33 @@ namespace OpenSubtitlesHandler
             }
         }
 
-        internal async Task<(string, Dictionary<string, string>, HttpStatusCode)> SendRequestAsync(string url, HttpMethod method, object body, Dictionary<string, string> headers, CancellationToken cancellationToken)
+        internal async Task<(string, Dictionary<string, string>, HttpStatusCode)> SendRequestAsync(string url, HttpMethod method, object? body, Dictionary<string, string> headers, CancellationToken cancellationToken)
         {
-            var client = _clientFactory.CreateClient();
+            var client = _clientFactory.CreateClient("Default");
 
-            client.DefaultRequestHeaders.Add(HeaderNames.UserAgent, $"Jellyfin-Plugin-OpenSubtitles/{_version}");
-            client.DefaultRequestHeaders.Add(HeaderNames.Accept, "*/*");
-
-            HttpContent content = null;
+            HttpContent? content = null;
             if (method != HttpMethod.Get && body != null)
             {
                 content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, MediaTypeNames.Application.Json);
             }
 
-            var request = new HttpRequestMessage
+            using var request = new HttpRequestMessage
             {
                 Method = method,
                 RequestUri = new Uri(url),
-                Content = content
+                Content = content,
+                Headers =
+                {
+                    UserAgent = { new ProductInfoHeaderValue("Jellyfin-Plugin-OpenSubtitles", _version) },
+                    Accept = { new MediaTypeWithQualityHeaderValue("*/*") }
+                }
             };
 
             foreach (var (key, value) in headers)
             {
                 if (string.Equals(key, "authorization", StringComparison.OrdinalIgnoreCase))
                 {
-                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", value);
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", value);
                 }
                 else
                 {
@@ -100,7 +114,7 @@ namespace OpenSubtitlesHandler
             }
 
             var result = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
-            var resHeaders = result.Headers.ToDictionary(x => x.Key.ToLower(), x => x.Value.First());
+            var resHeaders = result.Headers.ToDictionary(x => x.Key.ToLowerInvariant(), x => x.Value.First());
             var resBody = await result.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
             return (resBody, resHeaders, result.StatusCode);

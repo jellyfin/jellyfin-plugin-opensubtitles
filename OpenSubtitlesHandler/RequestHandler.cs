@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace OpenSubtitlesHandler
 {
+    /// <summary>
+    /// The request handler.
+    /// </summary>
     public static class RequestHandler
     {
         private const string BaseApiUrl = "https://api.opensubtitles.com/api/v1";
@@ -18,14 +21,25 @@ namespace OpenSubtitlesHandler
         private static DateTime _windowStart = DateTime.MinValue;
         private static int _requestCount;
 
-        public static async Task<(string response, HttpStatusCode statusCode)> SendRequestAsync(string endpoint, HttpMethod method, object body, Dictionary<string, string> headers, string apiKey, CancellationToken cancellationToken)
+        /// <summary>
+        /// Send the request.
+        /// </summary>
+        /// <param name="endpoint">The endpoint to send request to.</param>
+        /// <param name="method">The method.</param>
+        /// <param name="body">The request body.</param>
+        /// <param name="headers">The headers.</param>
+        /// <param name="apiKey">The api key.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The response.</returns>
+        /// <exception cref="ArgumentException">API Key is empty.</exception>
+        public static async Task<(string Response, HttpStatusCode StatusCode)> SendRequestAsync(string endpoint, HttpMethod method, object? body, Dictionary<string, string>? headers, string? apiKey, CancellationToken cancellationToken)
         {
-            var url = endpoint.StartsWith("/") ? BaseApiUrl + endpoint : endpoint;
-            var api = url.StartsWith(BaseApiUrl);
+            var url = endpoint.StartsWith('/') ? BaseApiUrl + endpoint : endpoint;
+            var isFullUrl = url.StartsWith(BaseApiUrl, StringComparison.OrdinalIgnoreCase);
 
             headers ??= new Dictionary<string, string>();
 
-            if (api)
+            if (isFullUrl)
             {
                 if (string.IsNullOrWhiteSpace(apiKey))
                 {
@@ -62,9 +76,9 @@ namespace OpenSubtitlesHandler
                 }
             }
 
-            var (response, responseHeaders, httpStatusCode) = await Util.Instance.SendRequestAsync(url, method, body, headers, cancellationToken).ConfigureAwait(false);
+            var (response, responseHeaders, httpStatusCode) = await OpenSubtitlesRequestHelper.Instance!.SendRequestAsync(url, method, body, headers, cancellationToken).ConfigureAwait(false);
 
-            if (!api)
+            if (!isFullUrl)
             {
                 return (response, httpStatusCode);
             }
@@ -73,12 +87,12 @@ namespace OpenSubtitlesHandler
 
             if (responseHeaders.TryGetValue("x-ratelimit-remaining-second", out var value))
             {
-                int.TryParse(value, out _hRemaining);
+                _ = int.TryParse(value, out _hRemaining);
             }
 
             if (responseHeaders.TryGetValue("ratelimit-reset", out value))
             {
-                int.TryParse(value, out _hReset);
+                _ = int.TryParse(value, out _hReset);
             }
 
             if (httpStatusCode != HttpStatusCode.TooManyRequests)
