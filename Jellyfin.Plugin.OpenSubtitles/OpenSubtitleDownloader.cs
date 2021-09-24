@@ -104,9 +104,9 @@ namespace Jellyfin.Plugin.OpenSubtitles
                     hash = OpenSubtitlesRequestHelper.ComputeHash(fileStream);
                 }
             }
-            catch (IOException e)
+            catch (IOException ex)
             {
-                throw new IOException(string.Format(CultureInfo.InvariantCulture, "IOException while computing hash for {0}", request.MediaPath), e);
+                throw new IOException(string.Format(CultureInfo.InvariantCulture, "IOException while computing hash for {0}", request.MediaPath), ex);
             }
 
             var options = new Dictionary<string, string>

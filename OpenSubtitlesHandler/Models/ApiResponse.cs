@@ -47,9 +47,9 @@ namespace OpenSubtitlesHandler.Models
             {
                 Data = JsonSerializer.Deserialize<T>(Body) ?? default;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                throw new JsonException($"Failed to parse JSON: \n{Body}", e);
+                throw new JsonException($"Failed to parse JSON: \n{(string.IsNullOrWhiteSpace(Body) ? @"""" : Body)}", ex);
             }
         }
 

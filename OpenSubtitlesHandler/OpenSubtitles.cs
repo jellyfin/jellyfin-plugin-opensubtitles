@@ -28,7 +28,14 @@ namespace OpenSubtitlesHandler
             var body = new { username, password };
             var response = await RequestHandler.SendRequestAsync("/login", HttpMethod.Post, body, null, apiKey, cancellationToken).ConfigureAwait(false);
 
-            return new ApiResponse<LoginInfo>(response.Response, response.StatusCode);
+            try
+            {
+                return new ApiResponse<LoginInfo>(response.Response, response.StatusCode);
+            }
+            catch (Exception ex)
+            {
+                throw new HttpRequestException($"Failed to log in, code: {response.StatusCode}", ex);
+            }
         }
 
         /// <summary>
@@ -49,7 +56,14 @@ namespace OpenSubtitlesHandler
 
             var response = await RequestHandler.SendRequestAsync("/logout", HttpMethod.Delete, null, headers, apiKey, cancellationToken).ConfigureAwait(false);
 
-            return new ApiResponse<object>(response.Response, response.StatusCode).Ok;
+            try
+            {
+                return new ApiResponse<object>(response.Response, response.StatusCode).Ok;
+            }
+            catch (Exception ex)
+            {
+                throw new HttpRequestException($"Failed to log out, code: {response.StatusCode}", ex);
+            }
         }
 
         /// <summary>
@@ -70,7 +84,14 @@ namespace OpenSubtitlesHandler
 
             var response = await RequestHandler.SendRequestAsync("/infos/user", HttpMethod.Get, null, headers, apiKey, cancellationToken).ConfigureAwait(false);
 
-            return new ApiResponse<EncapsulatedUserInfo>(response.Response, response.StatusCode);
+            try
+            {
+                return new ApiResponse<EncapsulatedUserInfo>(response.Response, response.StatusCode);
+            }
+            catch (Exception ex)
+            {
+                throw new HttpRequestException($"Failed to obtain user info, code: {response.StatusCode}", ex);
+            }
         }
 
         /// <summary>
@@ -93,7 +114,14 @@ namespace OpenSubtitlesHandler
             var body = new { file_id = file };
             var response = await RequestHandler.SendRequestAsync("/download", HttpMethod.Post, body, headers, apiKey, cancellationToken).ConfigureAwait(false);
 
-            return new ApiResponse<SubtitleDownloadInfo>(response.Response, response.StatusCode);
+            try
+            {
+                return new ApiResponse<SubtitleDownloadInfo>(response.Response, response.StatusCode);
+            }
+            catch (Exception ex)
+            {
+                throw new HttpRequestException($"Failed to obtain subtitle link for file {file}, code: {response.StatusCode}", ex);
+            }
         }
 
         /// <summary>
@@ -137,7 +165,14 @@ namespace OpenSubtitlesHandler
 
                 var response = await RequestHandler.SendRequestAsync($"/subtitles?{opts}", HttpMethod.Get, null, null, apiKey, cancellationToken).ConfigureAwait(false);
 
-                last = new ApiResponse<SearchResult>(response.Response, response.StatusCode);
+                try
+                {
+                    last = new ApiResponse<SearchResult>(response.Response, response.StatusCode);
+                }
+                catch (Exception ex)
+                {
+                    throw new HttpRequestException($"Failed to search for subtitles, options: {opts}, code: {response.StatusCode}", ex);
+                }
 
                 if (!last.Ok || last.Data == null)
                 {
