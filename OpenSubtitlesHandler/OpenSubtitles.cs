@@ -126,7 +126,7 @@ namespace OpenSubtitlesHandler
             }
 
             var max = -1;
-            var current = 0;
+            var current = 1;
 
             List<ResponseData> final = new ();
             ApiResponse<SearchResult> last;
@@ -161,6 +161,19 @@ namespace OpenSubtitlesHandler
             while (current < max && last.Data.Data.Count == 100);
 
             return new ApiResponse<IReadOnlyList<ResponseData>>(final, last.Code);
+        }
+
+        /// <summary>
+        /// Get language list.
+        /// </summary>
+        /// <param name="apiKey">The api key.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The list of languages.</returns>
+        public static async Task<ApiResponse<EncapsulatedLanguageList>> GetLanguageList(string apiKey, CancellationToken cancellationToken)
+        {
+            var response = await RequestHandler.SendRequestAsync("/infos/languages", HttpMethod.Get, null, null, apiKey, cancellationToken).ConfigureAwait(false);
+
+            return new ApiResponse<EncapsulatedLanguageList>(response);
         }
     }
 }

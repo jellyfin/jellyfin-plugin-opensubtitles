@@ -30,6 +30,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
         private readonly ILogger<OpenSubtitleDownloader> _logger;
         private LoginInfo? _login;
         private DateTime? _limitReset;
+        private IReadOnlyList<string>? _languages;
         private string _apiKey;
 
         /// <summary>
@@ -109,9 +110,11 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 throw new IOException(string.Format(CultureInfo.InvariantCulture, "IOException while computing hash for {0}", request.MediaPath), ex);
             }
 
+            var language = await GetLanguage(request.TwoLetterISOLanguageName, cancellationToken).ConfigureAwait(false);
+
             var options = new Dictionary<string, string>
             {
-                { "languages", request.TwoLetterISOLanguageName },
+                { "languages", language },
                 { "moviehash", hash },
                 { "type", request.ContentType == VideoContentType.Episode ? "episode" : "movie" }
             };
@@ -174,7 +177,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                     Comment = i.Attributes?.Comments,
                     CommunityRating = i.Attributes?.Ratings,
                     DownloadCount = i.Attributes?.DownloadCount,
-                    Format = i.Attributes?.Format,
+                    Format = i.Attributes?.Format ?? "srt",
                     ProviderName = Name,
                     ThreeLetterISOLanguageName = request.Language,
 
@@ -297,7 +300,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             var res = await OpenSubtitlesHandler.OpenSubtitles.DownloadSubtitleAsync(info.Data.Link, cancellationToken).ConfigureAwait(false);
 
-            if (!res.Ok || res.Data == null)
+            if (!res.Ok || string.IsNullOrWhiteSpace(res.Data))
             {
                 var msg = string.Format(
                     CultureInfo.InvariantCulture,
@@ -361,6 +364,45 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 _login.User = infoResponse.Data?.Data;
                 _limitReset = _login.User?.ResetTime;
             }
+        }
+
+        private async Task<string> GetLanguage(string language, CancellationToken cancellationToken)
+        {
+            // seems like api doesn't return any results for these?
+            if (language == "zh")
+            {
+                return "zh-CN";
+            }
+
+            if (language == "pt")
+            {
+                return "pt-PT";
+            }
+
+            if (_languages == null || _languages.Count == 0)
+            {
+                var res = await OpenSubtitlesHandler.OpenSubtitles.GetLanguageList(_apiKey, cancellationToken).ConfigureAwait(false);
+
+                if (!res.Ok || res.Data?.Data == null)
+                {
+                    throw new HttpRequestException(string.Format(CultureInfo.InvariantCulture, "Failed to get language list: {0}", res.Code));
+                }
+
+                _languages = res.Data.Data.Where(x => !string.IsNullOrWhiteSpace(x.Code)).Select(x => x.Code!).ToList();
+            }
+
+            var found = _languages.FirstOrDefault(x => string.Equals(x, language, StringComparison.OrdinalIgnoreCase));
+            if (found != null)
+            {
+                return found;
+            }
+
+            if (language.Contains('-', StringComparison.OrdinalIgnoreCase))
+            {
+                return await GetLanguage(language.Substring(0, 2), cancellationToken).ConfigureAwait(false);
+            }
+
+            throw new NotSupportedException(string.Format(CultureInfo.InvariantCulture, "Language '{0}' is not supported", language));
         }
 
         private PluginConfiguration GetOptions()
