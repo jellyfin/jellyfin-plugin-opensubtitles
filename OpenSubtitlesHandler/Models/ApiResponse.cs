@@ -60,7 +60,7 @@ namespace OpenSubtitlesHandler.Models
             }
             catch (Exception ex)
             {
-                throw new JsonException($"Failed to parse response, code: {Code}, context: {context}, body: \n{(string.IsNullOrWhiteSpace(Body) ? @"""" : Body)}", ex);
+                throw new JsonException($"Failed to parse response, code: {Code}, context: {context}, body: \n{(string.IsNullOrWhiteSpace(Body) ? "\"\"" : Body)}", ex);
             }
         }
 
