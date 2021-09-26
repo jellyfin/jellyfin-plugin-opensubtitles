@@ -13,12 +13,18 @@ namespace OpenSubtitlesHandler.Models
         /// <summary>
         /// Initializes a new instance of the <see cref="ApiResponse{T}"/> class.
         /// </summary>
-        /// <param name="response">The response.</param>
-        /// <param name="statusCode">The status code.</param>
-        public ApiResponse(T response, HttpStatusCode statusCode)
+        /// <param name="data">The data.</param>
+        /// <param name="response">The http response.</param>
+        public ApiResponse(T data, HttpResponse response)
         {
-            Code = statusCode;
-            Data = response;
+            Data = data;
+            Code = response.Code;
+            Body = response.Body;
+
+            if (!Ok && string.IsNullOrWhiteSpace(Body) && !string.IsNullOrWhiteSpace(response.Reason))
+            {
+                Body = response.Reason;
+            }
         }
 
         /// <summary>

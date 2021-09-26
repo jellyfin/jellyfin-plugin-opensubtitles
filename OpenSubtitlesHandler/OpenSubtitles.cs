@@ -130,12 +130,13 @@ namespace OpenSubtitlesHandler
 
             List<ResponseData> final = new ();
             ApiResponse<SearchResult> last;
+            HttpResponse response;
 
             do
             {
                 opts.Set("page", current.ToString(CultureInfo.InvariantCulture));
 
-                var response = await RequestHandler.SendRequestAsync($"/subtitles?{opts}", HttpMethod.Get, null, null, apiKey, cancellationToken).ConfigureAwait(false);
+                response = await RequestHandler.SendRequestAsync($"/subtitles?{opts}", HttpMethod.Get, null, null, apiKey, cancellationToken).ConfigureAwait(false);
 
                 last = new ApiResponse<SearchResult>(response, $"options: {options}", $"page: {current}");
 
@@ -146,7 +147,7 @@ namespace OpenSubtitlesHandler
 
                 if (last.Data.TotalPages == 0)
                 {
-                    return new ApiResponse<IReadOnlyList<ResponseData>>(final, response.Code);
+                    break;
                 }
 
                 if (max == -1)
@@ -158,9 +159,9 @@ namespace OpenSubtitlesHandler
 
                 final.AddRange(last.Data.Data);
             }
-            while (current < max && last.Data.Data.Count == 100);
+            while (current <= max && last.Data.Data.Count == 100);
 
-            return new ApiResponse<IReadOnlyList<ResponseData>>(final, last.Code);
+            return new ApiResponse<IReadOnlyList<ResponseData>>(final, response);
         }
 
         /// <summary>
