@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using OpenSubtitlesHandler.Models;
 
 namespace OpenSubtitlesHandler
 {
@@ -32,7 +33,7 @@ namespace OpenSubtitlesHandler
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The response.</returns>
         /// <exception cref="ArgumentException">API Key is empty.</exception>
-        public static async Task<(string Response, HttpStatusCode StatusCode)> SendRequestAsync(string endpoint, HttpMethod method, object? body, Dictionary<string, string>? headers, string? apiKey, CancellationToken cancellationToken)
+        public static async Task<HttpResponse> SendRequestAsync(string endpoint, HttpMethod method, object? body, Dictionary<string, string>? headers, string? apiKey, CancellationToken cancellationToken)
         {
             var url = endpoint.StartsWith('/') ? BaseApiUrl + endpoint : endpoint;
             var isFullUrl = url.StartsWith(BaseApiUrl, StringComparison.OrdinalIgnoreCase);
@@ -80,7 +81,11 @@ namespace OpenSubtitlesHandler
 
             if (!isFullUrl)
             {
-                return (response, httpStatusCode);
+                return new HttpResponse
+                {
+                    Body = response,
+                    Code = httpStatusCode
+                };
             }
 
             _requestCount++;
@@ -97,7 +102,17 @@ namespace OpenSubtitlesHandler
 
             if (httpStatusCode != HttpStatusCode.TooManyRequests)
             {
-                return (response, httpStatusCode);
+                if (!responseHeaders.TryGetValue("x-reason", out value))
+                {
+                    value = string.Empty;
+                }
+
+                return new HttpResponse
+                {
+                    Body = response,
+                    Code = httpStatusCode,
+                    Reason = value
+                };
             }
 
             var time = _hReset == -1 ? 5 : _hReset;

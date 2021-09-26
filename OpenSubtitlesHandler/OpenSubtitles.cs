@@ -28,14 +28,7 @@ namespace OpenSubtitlesHandler
             var body = new { username, password };
             var response = await RequestHandler.SendRequestAsync("/login", HttpMethod.Post, body, null, apiKey, cancellationToken).ConfigureAwait(false);
 
-            try
-            {
-                return new ApiResponse<LoginInfo>(response.Response, response.StatusCode);
-            }
-            catch (Exception ex)
-            {
-                throw new HttpRequestException($"Failed to log in, code: {response.StatusCode}", ex);
-            }
+            return new ApiResponse<LoginInfo>(response);
         }
 
         /// <summary>
@@ -56,14 +49,7 @@ namespace OpenSubtitlesHandler
 
             var response = await RequestHandler.SendRequestAsync("/logout", HttpMethod.Delete, null, headers, apiKey, cancellationToken).ConfigureAwait(false);
 
-            try
-            {
-                return new ApiResponse<object>(response.Response, response.StatusCode).Ok;
-            }
-            catch (Exception ex)
-            {
-                throw new HttpRequestException($"Failed to log out, code: {response.StatusCode}", ex);
-            }
+            return new ApiResponse<object>(response).Ok;
         }
 
         /// <summary>
@@ -84,14 +70,7 @@ namespace OpenSubtitlesHandler
 
             var response = await RequestHandler.SendRequestAsync("/infos/user", HttpMethod.Get, null, headers, apiKey, cancellationToken).ConfigureAwait(false);
 
-            try
-            {
-                return new ApiResponse<EncapsulatedUserInfo>(response.Response, response.StatusCode);
-            }
-            catch (Exception ex)
-            {
-                throw new HttpRequestException($"Failed to obtain user info, code: {response.StatusCode}", ex);
-            }
+            return new ApiResponse<EncapsulatedUserInfo>(response);
         }
 
         /// <summary>
@@ -114,14 +93,7 @@ namespace OpenSubtitlesHandler
             var body = new { file_id = file };
             var response = await RequestHandler.SendRequestAsync("/download", HttpMethod.Post, body, headers, apiKey, cancellationToken).ConfigureAwait(false);
 
-            try
-            {
-                return new ApiResponse<SubtitleDownloadInfo>(response.Response, response.StatusCode);
-            }
-            catch (Exception ex)
-            {
-                throw new HttpRequestException($"Failed to obtain subtitle link for file {file}, code: {response.StatusCode}", ex);
-            }
+            return new ApiResponse<SubtitleDownloadInfo>(response, $"file id: {file}");
         }
 
         /// <summary>
@@ -134,7 +106,7 @@ namespace OpenSubtitlesHandler
         {
             var response = await RequestHandler.SendRequestAsync(url, HttpMethod.Get, null, null, null, cancellationToken).ConfigureAwait(false);
 
-            return new ApiResponse<string>(response.Response, response.StatusCode);
+            return new ApiResponse<string>(response);
         }
 
         /// <summary>
@@ -165,14 +137,7 @@ namespace OpenSubtitlesHandler
 
                 var response = await RequestHandler.SendRequestAsync($"/subtitles?{opts}", HttpMethod.Get, null, null, apiKey, cancellationToken).ConfigureAwait(false);
 
-                try
-                {
-                    last = new ApiResponse<SearchResult>(response.Response, response.StatusCode);
-                }
-                catch (Exception ex)
-                {
-                    throw new HttpRequestException($"Failed to search for subtitles, options: {opts}, code: {response.StatusCode}", ex);
-                }
+                last = new ApiResponse<SearchResult>(response, $"options: {options}", $"page: {current}");
 
                 if (!last.Ok || last.Data == null)
                 {
@@ -181,7 +146,7 @@ namespace OpenSubtitlesHandler
 
                 if (last.Data.TotalPages == 0)
                 {
-                    return new ApiResponse<IReadOnlyList<ResponseData>>(final, response.StatusCode);
+                    return new ApiResponse<IReadOnlyList<ResponseData>>(final, response.Code);
                 }
 
                 if (max == -1)
