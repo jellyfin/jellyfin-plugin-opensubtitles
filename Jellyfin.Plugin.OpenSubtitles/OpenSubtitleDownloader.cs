@@ -97,6 +97,8 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             await Login(cancellationToken).ConfigureAwait(false);
 
+            var language = await GetLanguage(request.TwoLetterISOLanguageName, cancellationToken).ConfigureAwait(false);
+
             string hash;
             try
             {
@@ -109,8 +111,6 @@ namespace Jellyfin.Plugin.OpenSubtitles
             {
                 throw new IOException(string.Format(CultureInfo.InvariantCulture, "IOException while computing hash for {0}", request.MediaPath), ex);
             }
-
-            var language = await GetLanguage(request.TwoLetterISOLanguageName, cancellationToken).ConfigureAwait(false);
 
             var options = new Dictionary<string, string>
             {
@@ -370,12 +370,11 @@ namespace Jellyfin.Plugin.OpenSubtitles
         {
             if (language == "zh")
             {
-                return "zh-CN";
+                language = "zh-CN";
             }
-
-            if (language == "pt")
+            else if (language == "pt")
             {
-                return "pt-PT";
+                language = "pt-PT";
             }
 
             if (_languages == null || _languages.Count == 0)
@@ -398,7 +397,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             if (language.Contains('-', StringComparison.OrdinalIgnoreCase))
             {
-                return await GetLanguage(language.Substring(0, 2), cancellationToken).ConfigureAwait(false);
+                return await GetLanguage(language.Split('-')[0], cancellationToken).ConfigureAwait(false);
             }
 
             throw new NotSupportedException(string.Format(CultureInfo.InvariantCulture, "Language '{0}' is not supported", language));
