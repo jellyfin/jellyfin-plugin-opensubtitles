@@ -368,7 +368,6 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
         private async Task<string> GetLanguage(string language, CancellationToken cancellationToken)
         {
-            // seems like api doesn't return any results for these?
             if (language == "zh")
             {
                 return "zh-CN";
