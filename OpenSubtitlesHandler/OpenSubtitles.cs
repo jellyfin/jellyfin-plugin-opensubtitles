@@ -28,7 +28,7 @@ namespace OpenSubtitlesHandler
             var body = new { username, password };
             var response = await RequestHandler.SendRequestAsync("/login", HttpMethod.Post, body, null, apiKey, cancellationToken).ConfigureAwait(false);
 
-            return new ApiResponse<LoginInfo>(response.Response, response.StatusCode);
+            return new ApiResponse<LoginInfo>(response);
         }
 
         /// <summary>
@@ -49,7 +49,7 @@ namespace OpenSubtitlesHandler
 
             var response = await RequestHandler.SendRequestAsync("/logout", HttpMethod.Delete, null, headers, apiKey, cancellationToken).ConfigureAwait(false);
 
-            return new ApiResponse<object>(response.Response, response.StatusCode).Ok;
+            return new ApiResponse<object>(response).Ok;
         }
 
         /// <summary>
@@ -70,7 +70,7 @@ namespace OpenSubtitlesHandler
 
             var response = await RequestHandler.SendRequestAsync("/infos/user", HttpMethod.Get, null, headers, apiKey, cancellationToken).ConfigureAwait(false);
 
-            return new ApiResponse<EncapsulatedUserInfo>(response.Response, response.StatusCode);
+            return new ApiResponse<EncapsulatedUserInfo>(response);
         }
 
         /// <summary>
@@ -93,7 +93,7 @@ namespace OpenSubtitlesHandler
             var body = new { file_id = file };
             var response = await RequestHandler.SendRequestAsync("/download", HttpMethod.Post, body, headers, apiKey, cancellationToken).ConfigureAwait(false);
 
-            return new ApiResponse<SubtitleDownloadInfo>(response.Response, response.StatusCode);
+            return new ApiResponse<SubtitleDownloadInfo>(response, $"file id: {file}");
         }
 
         /// <summary>
@@ -106,7 +106,7 @@ namespace OpenSubtitlesHandler
         {
             var response = await RequestHandler.SendRequestAsync(url, HttpMethod.Get, null, null, null, cancellationToken).ConfigureAwait(false);
 
-            return new ApiResponse<string>(response.Response, response.StatusCode);
+            return new ApiResponse<string>(response);
         }
 
         /// <summary>
@@ -126,18 +126,19 @@ namespace OpenSubtitlesHandler
             }
 
             var max = -1;
-            var current = 0;
+            var current = 1;
 
             List<ResponseData> final = new ();
             ApiResponse<SearchResult> last;
+            HttpResponse response;
 
             do
             {
                 opts.Set("page", current.ToString(CultureInfo.InvariantCulture));
 
-                var response = await RequestHandler.SendRequestAsync($"/subtitles?{opts}", HttpMethod.Get, null, null, apiKey, cancellationToken).ConfigureAwait(false);
+                response = await RequestHandler.SendRequestAsync($"/subtitles?{opts}", HttpMethod.Get, null, null, apiKey, cancellationToken).ConfigureAwait(false);
 
-                last = new ApiResponse<SearchResult>(response.Response, response.StatusCode);
+                last = new ApiResponse<SearchResult>(response, $"options: {options}", $"page: {current}");
 
                 if (!last.Ok || last.Data == null)
                 {
@@ -146,7 +147,7 @@ namespace OpenSubtitlesHandler
 
                 if (last.Data.TotalPages == 0)
                 {
-                    return new ApiResponse<IReadOnlyList<ResponseData>>(final, response.StatusCode);
+                    break;
                 }
 
                 if (max == -1)
@@ -158,9 +159,22 @@ namespace OpenSubtitlesHandler
 
                 final.AddRange(last.Data.Data);
             }
-            while (current < max && last.Data.Data.Count == 100);
+            while (current <= max && last.Data.Data.Count == 100);
 
-            return new ApiResponse<IReadOnlyList<ResponseData>>(final, last.Code);
+            return new ApiResponse<IReadOnlyList<ResponseData>>(final, response);
+        }
+
+        /// <summary>
+        /// Get language list.
+        /// </summary>
+        /// <param name="apiKey">The api key.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The list of languages.</returns>
+        public static async Task<ApiResponse<EncapsulatedLanguageList>> GetLanguageList(string apiKey, CancellationToken cancellationToken)
+        {
+            var response = await RequestHandler.SendRequestAsync("/infos/languages", HttpMethod.Get, null, null, apiKey, cancellationToken).ConfigureAwait(false);
+
+            return new ApiResponse<EncapsulatedLanguageList>(response);
         }
     }
 }
