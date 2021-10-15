@@ -15,6 +15,8 @@ namespace OpenSubtitlesHandler
     /// </summary>
     public static class OpenSubtitles
     {
+        private static readonly CultureInfo _usCulture = CultureInfo.ReadOnly(new CultureInfo("en-US"));
+
         /// <summary>
         /// Login.
         /// </summary>
@@ -120,11 +122,6 @@ namespace OpenSubtitlesHandler
         {
             var opts = System.Web.HttpUtility.ParseQueryString(string.Empty);
 
-            foreach (var (key, value) in options.OrderBy(x => x.Key))
-            {
-                opts.Add(key, value);
-            }
-
             var max = -1;
             var current = 1;
 
@@ -134,11 +131,21 @@ namespace OpenSubtitlesHandler
 
             do
             {
-                opts.Set("page", current.ToString(CultureInfo.InvariantCulture));
+                opts.Clear();
+
+                if (current > 1)
+                {
+                    options["page"] = current.ToString(_usCulture);
+                }
+
+                foreach (var (key, value) in options.OrderBy(x => x.Key))
+                {
+                    opts.Add(key, value.ToLower(_usCulture));
+                }
 
                 response = await RequestHandler.SendRequestAsync($"/subtitles?{opts}", HttpMethod.Get, null, null, apiKey, cancellationToken).ConfigureAwait(false);
 
-                last = new ApiResponse<SearchResult>(response, $"options: {options}", $"page: {current}");
+                last = new ApiResponse<SearchResult>(response, $"query: {opts}", $"page: {current}");
 
                 if (!last.Ok || last.Data == null)
                 {
