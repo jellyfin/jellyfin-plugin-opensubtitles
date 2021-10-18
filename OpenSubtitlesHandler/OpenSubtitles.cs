@@ -140,7 +140,7 @@ namespace OpenSubtitlesHandler
 
                 foreach (var (key, value) in options.OrderBy(x => x.Key))
                 {
-                    opts.Add(key, value.ToLower(_usCulture));
+                    opts.Add(key.ToLower(_usCulture), value.ToLower(_usCulture));
                 }
 
                 response = await RequestHandler.SendRequestAsync($"/subtitles?{opts}", HttpMethod.Get, null, null, apiKey, cancellationToken).ConfigureAwait(false);

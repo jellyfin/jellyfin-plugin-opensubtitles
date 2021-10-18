@@ -116,8 +116,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             {
                 { "languages", language },
                 { "moviehash", hash },
-                { "type", request.ContentType == VideoContentType.Episode ? "episode" : "movie" },
-                { "query", request.ContentType == VideoContentType.Episode ? request.SeriesName : Path.GetFileName(request.MediaPath) }
+                { "type", request.ContentType == VideoContentType.Episode ? "episode" : "movie" }
             };
 
             // If we have the IMDb ID we use that, otherwise query with the details
@@ -127,10 +126,19 @@ namespace Jellyfin.Plugin.OpenSubtitles
             }
             else
             {
+                options.Add("query", Path.GetFileName(request.MediaPath));
+
                 if (request.ContentType == VideoContentType.Episode)
                 {
-                    options.Add("season_number", request.ParentIndexNumber?.ToString(_usCulture) ?? string.Empty);
-                    options.Add("episode_number", request.IndexNumber?.ToString(_usCulture) ?? string.Empty);
+                    if (request.ParentIndexNumber.HasValue)
+                    {
+                        options.Add("season_number", request.ParentIndexNumber.Value.ToString(_usCulture));
+                    }
+
+                    if (request.IndexNumber.HasValue)
+                    {
+                        options.Add("episode_number", request.IndexNumber.Value.ToString(_usCulture));
+                    }
                 }
             }
 
