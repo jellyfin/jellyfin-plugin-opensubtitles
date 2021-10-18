@@ -31,7 +31,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
         private LoginInfo? _login;
         private DateTime? _limitReset;
         private IReadOnlyList<string>? _languages;
-        private string _apiKey;
+        private string _customApiKey;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OpenSubtitleDownloader"/> class.
@@ -48,12 +48,23 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             OpenSubtitlesPlugin.Instance!.ConfigurationChanged += (_, _) =>
             {
-                _apiKey = GetOptions().ApiKey;
+                _customApiKey = GetOptions().CustomApiKey;
                 // force a login next time a request is made
                 _login = null;
             };
 
-            _apiKey = GetOptions().ApiKey;
+            _customApiKey = GetOptions().CustomApiKey;
+        }
+
+        /// <summary>
+        /// Gets the API key that will be used.
+        /// </summary>
+        public string ApiKey
+        {
+            get
+            {
+                return !string.IsNullOrWhiteSpace(_customApiKey) ? _customApiKey : OpenSubtitlesPlugin.ApiKey;
+            }
         }
 
         /// <inheritdoc />
@@ -74,11 +85,6 @@ namespace Jellyfin.Plugin.OpenSubtitles
             if (request == null)
             {
                 throw new ArgumentNullException(nameof(request));
-            }
-
-            if (string.IsNullOrWhiteSpace(_apiKey))
-            {
-                throw new AuthenticationException("API key not set up");
             }
 
             long.TryParse(request.GetProviderId(MetadataProvider.Imdb)?.TrimStart('t') ?? string.Empty, NumberStyles.Any, _usCulture, out var imdbId);
@@ -141,7 +147,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             _logger.LogDebug("Search query: {Query}", options);
 
-            var searchResponse = await OpenSubtitlesHandler.OpenSubtitles.SearchSubtitlesAsync(options, _apiKey, cancellationToken).ConfigureAwait(false);
+            var searchResponse = await OpenSubtitlesHandler.OpenSubtitles.SearchSubtitlesAsync(options, ApiKey, cancellationToken).ConfigureAwait(false);
 
             if (!searchResponse.Ok)
             {
@@ -193,11 +199,6 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 throw new ArgumentException("Missing param", nameof(id));
             }
 
-            if (string.IsNullOrWhiteSpace(_apiKey))
-            {
-                throw new AuthenticationException("API key not set up");
-            }
-
             if (_login?.User?.RemainingDownloads <= 0)
             {
                 if (_limitReset < DateTime.UtcNow)
@@ -233,7 +234,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             var fid = int.Parse(ossId, _usCulture);
 
-            var info = await OpenSubtitlesHandler.OpenSubtitles.GetSubtitleLinkAsync(fid, _login, _apiKey, cancellationToken).ConfigureAwait(false);
+            var info = await OpenSubtitlesHandler.OpenSubtitles.GetSubtitleLinkAsync(fid, _login, ApiKey, cancellationToken).ConfigureAwait(false);
 
             if (info.Data?.Message != null && info.Data.Message.Contains("UTC", StringComparison.Ordinal))
             {
@@ -317,11 +318,6 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(_apiKey))
-            {
-                throw new AuthenticationException("API key is not set up");
-            }
-
             var options = GetOptions();
             if (string.IsNullOrWhiteSpace(options.Username) || string.IsNullOrWhiteSpace(options.Password))
             {
@@ -331,7 +327,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             var loginResponse = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(
                 options.Username,
                 options.Password,
-                _apiKey,
+                ApiKey,
                 cancellationToken).ConfigureAwait(false);
 
             if (!loginResponse.Ok)
@@ -354,7 +350,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 return;
             }
 
-            var infoResponse = await OpenSubtitlesHandler.OpenSubtitles.GetUserInfo(_login, _apiKey, cancellationToken).ConfigureAwait(false);
+            var infoResponse = await OpenSubtitlesHandler.OpenSubtitles.GetUserInfo(_login, ApiKey, cancellationToken).ConfigureAwait(false);
             if (infoResponse.Ok)
             {
                 _login.User = infoResponse.Data?.Data;
@@ -375,7 +371,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             if (_languages == null || _languages.Count == 0)
             {
-                var res = await OpenSubtitlesHandler.OpenSubtitles.GetLanguageList(_apiKey, cancellationToken).ConfigureAwait(false);
+                var res = await OpenSubtitlesHandler.OpenSubtitles.GetLanguageList(ApiKey, cancellationToken).ConfigureAwait(false);
 
                 if (!res.Ok || res.Data?.Data == null)
                 {

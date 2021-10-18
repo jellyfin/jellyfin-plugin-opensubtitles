@@ -14,6 +14,11 @@ namespace Jellyfin.Plugin.OpenSubtitles
     public class OpenSubtitlesPlugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
         /// <summary>
+        /// Default API key to use when performing an API call.
+        /// </summary>
+        public const string ApiKey = "TBD";
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="OpenSubtitlesPlugin"/> class.
         /// </summary>
         /// <param name="applicationPaths">Instance of the <see cref="IApplicationPaths"/> interface.</param>

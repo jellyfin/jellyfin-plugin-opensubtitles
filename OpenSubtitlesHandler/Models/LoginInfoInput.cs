@@ -22,7 +22,6 @@ namespace OpenSubtitlesHandler.Models
         /// <summary>
         /// Gets or sets the api key.
         /// </summary>
-        [Required]
         public string ApiKey { get; set; } = null!;
     }
 }

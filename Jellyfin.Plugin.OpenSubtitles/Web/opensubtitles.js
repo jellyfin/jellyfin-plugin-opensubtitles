@@ -23,7 +23,7 @@ export default function (view, params) {
             const password = form.querySelector('#password').value;
             const apiKey = form.querySelector('#apikey').value;
 
-            if (!username || !password || !apiKey) {
+            if (!username || !password) {
                 Dashboard.processErrorResponse({statusText: "Account info is incomplete"});
                 return;
             }

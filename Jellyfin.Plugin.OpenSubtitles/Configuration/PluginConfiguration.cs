@@ -18,8 +18,8 @@ namespace Jellyfin.Plugin.OpenSubtitles.Configuration
         public string Password { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the API Key.
+        /// Gets or sets the custom API Key.
         /// </summary>
-        public string ApiKey { get; set; } = string.Empty;
+        public string CustomApiKey { get; set; } = string.Empty;
     }
 }
