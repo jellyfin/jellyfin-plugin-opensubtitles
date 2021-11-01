@@ -26,7 +26,6 @@ namespace Jellyfin.Plugin.OpenSubtitles
     /// </summary>
     public class OpenSubtitleDownloader : ISubtitleProvider
     {
-        private static readonly CultureInfo _usCulture = CultureInfo.ReadOnly(new CultureInfo("en-US"));
         private readonly ILogger<OpenSubtitleDownloader> _logger;
         private LoginInfo? _login;
         private DateTime? _limitReset;
@@ -81,7 +80,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 throw new AuthenticationException("API key not set up");
             }
 
-            long.TryParse(request.GetProviderId(MetadataProvider.Imdb)?.TrimStart('t') ?? string.Empty, NumberStyles.Any, _usCulture, out var imdbId);
+            long.TryParse(request.GetProviderId(MetadataProvider.Imdb)?.TrimStart('t') ?? string.Empty, NumberStyles.Any, CultureInfo.InvariantCulture, out var imdbId);
 
             if (request.ContentType == VideoContentType.Episode && (!request.IndexNumber.HasValue || !request.ParentIndexNumber.HasValue || string.IsNullOrEmpty(request.SeriesName)))
             {
@@ -116,21 +115,29 @@ namespace Jellyfin.Plugin.OpenSubtitles
             {
                 { "languages", language },
                 { "moviehash", hash },
-                { "type", request.ContentType == VideoContentType.Episode ? "episode" : "movie" },
-                { "query", request.ContentType == VideoContentType.Episode ? request.SeriesName : Path.GetFileName(request.MediaPath) }
+                { "type", request.ContentType == VideoContentType.Episode ? "episode" : "movie" }
             };
 
             // If we have the IMDb ID we use that, otherwise query with the details
             if (imdbId != 0)
             {
-                options.Add("imdb_id", imdbId.ToString(_usCulture));
+                options.Add("imdb_id", imdbId.ToString(CultureInfo.InvariantCulture));
             }
             else
             {
+                options.Add("query", Path.GetFileName(request.MediaPath));
+
                 if (request.ContentType == VideoContentType.Episode)
                 {
-                    options.Add("season_number", request.ParentIndexNumber?.ToString(_usCulture) ?? string.Empty);
-                    options.Add("episode_number", request.IndexNumber?.ToString(_usCulture) ?? string.Empty);
+                    if (request.ParentIndexNumber.HasValue)
+                    {
+                        options.Add("season_number", request.ParentIndexNumber.Value.ToString(CultureInfo.InvariantCulture));
+                    }
+
+                    if (request.IndexNumber.HasValue)
+                    {
+                        options.Add("episode_number", request.IndexNumber.Value.ToString(CultureInfo.InvariantCulture));
+                    }
                 }
             }
 
@@ -231,16 +238,13 @@ namespace Jellyfin.Plugin.OpenSubtitles
             var language = idParts[1];
             var ossId = idParts[2];
 
-            var fid = int.Parse(ossId, _usCulture);
+            var fid = int.Parse(ossId, CultureInfo.InvariantCulture);
 
             var info = await OpenSubtitlesHandler.OpenSubtitles.GetSubtitleLinkAsync(fid, _login, _apiKey, cancellationToken).ConfigureAwait(false);
 
-            if (info.Data?.Message != null && info.Data.Message.Contains("UTC", StringComparison.Ordinal))
+            if (info.Data?.ResetTime != null)
             {
-                // "Your quota will be renewed in 20 hours and 52 minutes (2021-08-24 12:02:10 UTC) "
-                var str = info.Data.Message.Split('(')[1].Trim().Replace(" UTC)", "Z", StringComparison.Ordinal);
-                _limitReset = DateTime.Parse(str, _usCulture, DateTimeStyles.AdjustToUniversal);
-
+                _limitReset = info.Data.ResetTime;
                 _logger.LogDebug("Updated expiration time to {ResetTime}", _limitReset);
             }
 
@@ -287,7 +291,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             {
                 var msg = string.Format(
                     CultureInfo.InvariantCulture,
-                    "Failed to obtain download link for file {0}: {1}",
+                    "Failed to obtain download link for file {0}: {1} (empty response)",
                     fid,
                     info.Code);
 

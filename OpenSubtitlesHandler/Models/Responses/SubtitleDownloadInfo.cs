@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System;
+using System.Text.Json.Serialization;
 
 namespace OpenSubtitlesHandler.Models.Responses
 {
@@ -24,5 +25,11 @@ namespace OpenSubtitlesHandler.Models.Responses
         /// </summary>
         [JsonPropertyName("message")]
         public string? Message { get; set; }
+
+        /// <summary>
+        /// Gets or sets the reset time.
+        /// </summary>
+        [JsonPropertyName("reset_time_utc")]
+        public DateTime? ResetTime { get; set; }
     }
 }
