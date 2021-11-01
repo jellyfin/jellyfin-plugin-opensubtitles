@@ -30,6 +30,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
         private readonly ILogger<OpenSubtitleDownloader> _logger;
         private LoginInfo? _login;
         private DateTime? _limitReset;
+        private IReadOnlyList<string>? _languages;
         private string _apiKey;
 
         /// <summary>
@@ -96,6 +97,8 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             await Login(cancellationToken).ConfigureAwait(false);
 
+            var language = await GetLanguage(request.TwoLetterISOLanguageName, cancellationToken).ConfigureAwait(false);
+
             string hash;
             try
             {
@@ -104,16 +107,17 @@ namespace Jellyfin.Plugin.OpenSubtitles
                     hash = OpenSubtitlesRequestHelper.ComputeHash(fileStream);
                 }
             }
-            catch (IOException e)
+            catch (IOException ex)
             {
-                throw new IOException(string.Format(CultureInfo.InvariantCulture, "IOException while computing hash for {0}", request.MediaPath), e);
+                throw new IOException(string.Format(CultureInfo.InvariantCulture, "IOException while computing hash for {0}", request.MediaPath), ex);
             }
 
             var options = new Dictionary<string, string>
             {
-                { "languages", request.TwoLetterISOLanguageName },
+                { "languages", language },
                 { "moviehash", hash },
-                { "type", request.ContentType == VideoContentType.Episode ? "episode" : "movie" }
+                { "type", request.ContentType == VideoContentType.Episode ? "episode" : "movie" },
+                { "query", request.ContentType == VideoContentType.Episode ? request.SeriesName : Path.GetFileName(request.MediaPath) }
             };
 
             // If we have the IMDb ID we use that, otherwise query with the details
@@ -125,13 +129,8 @@ namespace Jellyfin.Plugin.OpenSubtitles
             {
                 if (request.ContentType == VideoContentType.Episode)
                 {
-                    options.Add("query", request.SeriesName.Length <= 2 ? $"{request.SeriesName} {request.ProductionYear}" : request.SeriesName);
                     options.Add("season_number", request.ParentIndexNumber?.ToString(_usCulture) ?? string.Empty);
                     options.Add("episode_number", request.IndexNumber?.ToString(_usCulture) ?? string.Empty);
-                }
-                else
-                {
-                    options.Add("query", request.Name.Length <= 2 ? $"{request.Name} {request.ProductionYear}" : request.Name);
                 }
             }
 
@@ -174,7 +173,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                     Comment = i.Attributes?.Comments,
                     CommunityRating = i.Attributes?.Ratings,
                     DownloadCount = i.Attributes?.DownloadCount,
-                    Format = i.Attributes?.Format,
+                    Format = i.Attributes?.Format ?? "srt",
                     ProviderName = Name,
                     ThreeLetterISOLanguageName = request.Language,
 
@@ -297,7 +296,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             var res = await OpenSubtitlesHandler.OpenSubtitles.DownloadSubtitleAsync(info.Data.Link, cancellationToken).ConfigureAwait(false);
 
-            if (!res.Ok || res.Data == null)
+            if (!res.Ok || string.IsNullOrWhiteSpace(res.Data))
             {
                 var msg = string.Format(
                     CultureInfo.InvariantCulture,
@@ -361,6 +360,43 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 _login.User = infoResponse.Data?.Data;
                 _limitReset = _login.User?.ResetTime;
             }
+        }
+
+        private async Task<string> GetLanguage(string language, CancellationToken cancellationToken)
+        {
+            if (language == "zh")
+            {
+                language = "zh-CN";
+            }
+            else if (language == "pt")
+            {
+                language = "pt-PT";
+            }
+
+            if (_languages == null || _languages.Count == 0)
+            {
+                var res = await OpenSubtitlesHandler.OpenSubtitles.GetLanguageList(_apiKey, cancellationToken).ConfigureAwait(false);
+
+                if (!res.Ok || res.Data?.Data == null)
+                {
+                    throw new HttpRequestException(string.Format(CultureInfo.InvariantCulture, "Failed to get language list: {0}", res.Code));
+                }
+
+                _languages = res.Data.Data.Where(x => !string.IsNullOrWhiteSpace(x.Code)).Select(x => x.Code!).ToList();
+            }
+
+            var found = _languages.FirstOrDefault(x => string.Equals(x, language, StringComparison.OrdinalIgnoreCase));
+            if (found != null)
+            {
+                return found;
+            }
+
+            if (language.Contains('-', StringComparison.OrdinalIgnoreCase))
+            {
+                return await GetLanguage(language.Split('-')[0], cancellationToken).ConfigureAwait(false);
+            }
+
+            throw new NotSupportedException(string.Format(CultureInfo.InvariantCulture, "Language '{0}' is not supported", language));
         }
 
         private PluginConfiguration GetOptions()

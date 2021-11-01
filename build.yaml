@@ -1,8 +1,8 @@
 name: "Open Subtitles"
 guid: "4b9ed42f-5185-48b5-9803-6ff2989014c4"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-opensubtitles.png"
-version: "11"
-targetAbi: "10.7.0.0"
+version: "12"
+targetAbi: "10.7.7.0"
 framework: "net5.0"
 owner: "jellyfin"
 overview: "Download subtitles for your media"
@@ -12,20 +12,5 @@ artifacts:
   - "Jellyfin.Plugin.OpenSubtitles.dll"
   - "OpenSubtitlesHandler.dll"
 changelog: |2-
-  ### Major features and improvements ###
-  - Switch to new API (#54) @MBR-0001
-
-  ### New features and improvements ###
-  - chore: plugin images (#50) @h1dden-da3m0n
-
-  ### Dependency updates ###
-  - chore(deps): bump release-drafter/release-drafter from v5.14.0 to v5.15.0 (#45) @dependabot
-
-  ### CI & build changes ###
-  - Update ci (#55) @h1dden-da3m0n
-  - chore(ci): builds, releas drafter and more (#42) @h1dden-da3m0n
-
-  ### Code or Repo Maintenance ###
-  - Add analyzers, remove all warnings (#61) @crobibero
-  - Remove jquery and update to es6 (#51) @grafixeyehero
-  - Add analyzers (#44) @crobibero
+  ### Bug Fixes ###
+  - Fixes, language improvements, code cleanup & error logging (#67) @MBR-0001
