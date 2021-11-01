@@ -38,7 +38,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.API
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult> ValidateLoginInfo([FromBody] LoginInfoInput body)
         {
-            var key = !string.IsNullOrWhiteSpace(body.ApiKey) ? body.ApiKey : OpenSubtitlesPlugin.ApiKey;
+            var key = !string.IsNullOrWhiteSpace(body.CustomApiKey) ? body.CustomApiKey : OpenSubtitlesPlugin.ApiKey;
             var response = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(body.Username, body.Password, key, CancellationToken.None).ConfigureAwait(false);
 
             if (!response.Ok)

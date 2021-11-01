@@ -57,7 +57,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
         }
 
         /// <summary>
-        /// Gets the API key that will be used.
+        /// Gets the API key that will be used for requests.
         /// </summary>
         public string ApiKey
         {

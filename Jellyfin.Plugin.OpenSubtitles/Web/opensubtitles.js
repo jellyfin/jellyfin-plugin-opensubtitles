@@ -9,7 +9,7 @@ export default function (view, params) {
         ApiClient.getPluginConfiguration(OpenSubtitlesConfig.pluginUniqueId).then(function (config) {
             page.querySelector('#username').value = config.Username || '';
             page.querySelector('#password').value = config.Password || '';
-            page.querySelector('#apikey').value = config.ApiKey || '';
+            page.querySelector('#apikey').value = config.CustomApiKey || '';
             Dashboard.hideLoadingMsg();
         });
     });
@@ -30,7 +30,7 @@ export default function (view, params) {
 
             const el = form.querySelector('#ossresponse');
             
-            const data = JSON.stringify({ Username: username, Password: password, ApiKey: apiKey });
+            const data = JSON.stringify({ Username: username, Password: password, CustomApiKey: apiKey });
             const url = ApiClient.getUrl('Jellyfin.Plugin.OpenSubtitles/ValidateLoginInfo');
 
             const handler = response => response.json().then(res => {
@@ -39,7 +39,7 @@ export default function (view, params) {
 
                     config.Username = username;
                     config.Password = password;
-                    config.ApiKey = apiKey;
+                    config.CustomApiKey = apiKey;
 
                     ApiClient.updatePluginConfiguration(OpenSubtitlesConfig.pluginUniqueId, config).then(function (result) {
                         Dashboard.processPluginConfigurationUpdateResult(result);
