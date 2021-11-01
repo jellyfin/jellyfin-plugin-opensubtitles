@@ -19,9 +19,9 @@ export default function (view, params) {
         Dashboard.showLoadingMsg();
         const form = this;
         ApiClient.getPluginConfiguration(OpenSubtitlesConfig.pluginUniqueId).then(function (config) {
-            const username = form.querySelector('#username').value;
-            const password = form.querySelector('#password').value;
-            const apiKey = form.querySelector('#apikey').value;
+            const username = form.querySelector('#username').value.trim();
+            const password = form.querySelector('#password').value.trim();
+            const apiKey = form.querySelector('#apikey').value.trim();
 
             if (!username || !password) {
                 Dashboard.processErrorResponse({statusText: "Account info is incomplete"});
