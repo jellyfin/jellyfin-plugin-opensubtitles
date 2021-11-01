@@ -26,7 +26,6 @@ namespace Jellyfin.Plugin.OpenSubtitles
     /// </summary>
     public class OpenSubtitleDownloader : ISubtitleProvider
     {
-        private static readonly CultureInfo _usCulture = CultureInfo.ReadOnly(new CultureInfo("en-US"));
         private readonly ILogger<OpenSubtitleDownloader> _logger;
         private LoginInfo? _login;
         private DateTime? _limitReset;
@@ -81,7 +80,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 throw new AuthenticationException("API key not set up");
             }
 
-            long.TryParse(request.GetProviderId(MetadataProvider.Imdb)?.TrimStart('t') ?? string.Empty, NumberStyles.Any, _usCulture, out var imdbId);
+            long.TryParse(request.GetProviderId(MetadataProvider.Imdb)?.TrimStart('t') ?? string.Empty, NumberStyles.Any, CultureInfo.InvariantCulture, out var imdbId);
 
             if (request.ContentType == VideoContentType.Episode && (!request.IndexNumber.HasValue || !request.ParentIndexNumber.HasValue || string.IsNullOrEmpty(request.SeriesName)))
             {
@@ -122,7 +121,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             // If we have the IMDb ID we use that, otherwise query with the details
             if (imdbId != 0)
             {
-                options.Add("imdb_id", imdbId.ToString(_usCulture));
+                options.Add("imdb_id", imdbId.ToString(CultureInfo.InvariantCulture));
             }
             else
             {
@@ -132,12 +131,12 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 {
                     if (request.ParentIndexNumber.HasValue)
                     {
-                        options.Add("season_number", request.ParentIndexNumber.Value.ToString(_usCulture));
+                        options.Add("season_number", request.ParentIndexNumber.Value.ToString(CultureInfo.InvariantCulture));
                     }
 
                     if (request.IndexNumber.HasValue)
                     {
-                        options.Add("episode_number", request.IndexNumber.Value.ToString(_usCulture));
+                        options.Add("episode_number", request.IndexNumber.Value.ToString(CultureInfo.InvariantCulture));
                     }
                 }
             }
@@ -239,7 +238,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             var language = idParts[1];
             var ossId = idParts[2];
 
-            var fid = int.Parse(ossId, _usCulture);
+            var fid = int.Parse(ossId, CultureInfo.InvariantCulture);
 
             var info = await OpenSubtitlesHandler.OpenSubtitles.GetSubtitleLinkAsync(fid, _login, _apiKey, cancellationToken).ConfigureAwait(false);
 
