@@ -243,12 +243,9 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             var info = await OpenSubtitlesHandler.OpenSubtitles.GetSubtitleLinkAsync(fid, _login, _apiKey, cancellationToken).ConfigureAwait(false);
 
-            if (info.Data?.Message != null && info.Data.Message.Contains("UTC", StringComparison.Ordinal))
+            if (info.Data?.ResetTime != null)
             {
-                // "Your quota will be renewed in 20 hours and 52 minutes (2021-08-24 12:02:10 UTC) "
-                var str = info.Data.Message.Split('(')[1].Trim().Replace(" UTC)", "Z", StringComparison.Ordinal);
-                _limitReset = DateTime.Parse(str, _usCulture, DateTimeStyles.AdjustToUniversal);
-
+                _limitReset = info.Data.ResetTime;
                 _logger.LogDebug("Updated expiration time to {ResetTime}", _limitReset);
             }
 
@@ -295,7 +292,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             {
                 var msg = string.Format(
                     CultureInfo.InvariantCulture,
-                    "Failed to obtain download link for file {0}: {1}",
+                    "Failed to obtain download link for file {0}: {1} (empty response)",
                     fid,
                     info.Code);
 
