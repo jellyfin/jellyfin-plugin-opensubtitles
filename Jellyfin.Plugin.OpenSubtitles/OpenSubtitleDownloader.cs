@@ -29,6 +29,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
         private readonly ILogger<OpenSubtitleDownloader> _logger;
         private LoginInfo? _login;
         private DateTime? _limitReset;
+        private DateTime? _lastRatelimitLog;
         private IReadOnlyList<string>? _languages;
         private string _customApiKey;
 
@@ -86,6 +87,19 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 throw new ArgumentNullException(nameof(request));
             }
 
+            await Login(cancellationToken).ConfigureAwait(false);
+
+            if (request.IsAutomated && _login?.User?.RemainingDownloads <= 0)
+            {
+                if (_lastRatelimitLog == null || DateTime.UtcNow.Subtract(_lastRatelimitLog.Value).TotalSeconds > 60)
+                {
+                    _logger.LogInformation("Daily download limit reached, returning no results for automated task");
+                    _lastRatelimitLog = DateTime.UtcNow;
+                }
+
+                return Enumerable.Empty<RemoteSubtitleInfo>();
+            }
+
             long.TryParse(request.GetProviderId(MetadataProvider.Imdb)?.TrimStart('t') ?? string.Empty, NumberStyles.Any, CultureInfo.InvariantCulture, out var imdbId);
 
             if (request.ContentType == VideoContentType.Episode && (!request.IndexNumber.HasValue || !request.ParentIndexNumber.HasValue || string.IsNullOrEmpty(request.SeriesName)))
@@ -99,8 +113,6 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 _logger.LogDebug("Path Missing");
                 return Enumerable.Empty<RemoteSubtitleInfo>();
             }
-
-            await Login(cancellationToken).ConfigureAwait(false);
 
             var language = await GetLanguage(request.TwoLetterISOLanguageName, cancellationToken).ConfigureAwait(false);
 
