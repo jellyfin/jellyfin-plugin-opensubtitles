@@ -1,7 +1,7 @@
 name: "Open Subtitles"
 guid: "4b9ed42f-5185-48b5-9803-6ff2989014c4"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-opensubtitles.png"
-version: "14"
+version: "15"
 targetAbi: "10.8.0.0"
 framework: "net6.0"
 owner: "jellyfin"
@@ -13,4 +13,4 @@ artifacts:
   - "OpenSubtitlesHandler.dll"
 changelog: |2-
   ### Code or Repo Maintenance ###
-  - bump targetAbi to 10.8 (#78) @h1dden-da3m0n
+  - Fix build.yaml, fix new build errors (#81) @crobibero
