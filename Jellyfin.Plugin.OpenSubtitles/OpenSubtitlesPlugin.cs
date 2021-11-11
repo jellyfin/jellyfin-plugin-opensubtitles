@@ -16,7 +16,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
         /// <summary>
         /// Default API key to use when performing an API call.
         /// </summary>
-        public const string ApiKey = "TBD";
+        public const string ApiKey = "gUCLWGoAg2PmyseoTM0INFFVPcDCeDlT";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OpenSubtitlesPlugin"/> class.
