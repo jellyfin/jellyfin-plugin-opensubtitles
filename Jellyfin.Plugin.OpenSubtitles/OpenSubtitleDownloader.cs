@@ -101,10 +101,11 @@ namespace Jellyfin.Plugin.OpenSubtitles
             string hash;
             try
             {
-                await using (var fileStream = File.OpenRead(request.MediaPath))
-                {
-                    hash = OpenSubtitlesRequestHelper.ComputeHash(fileStream);
-                }
+                #pragma warning disable CA2007
+                await using var fileStream = File.OpenRead(request.MediaPath);
+                #pragma warning restore CA2007
+
+                hash = OpenSubtitlesRequestHelper.ComputeHash(fileStream);
             }
             catch (IOException ex)
             {
