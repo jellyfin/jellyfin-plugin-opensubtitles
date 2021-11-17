@@ -82,6 +82,6 @@ namespace OpenSubtitlesHandler.Models
         /// <summary>
         /// Gets a value indicating whether the request was successful.
         /// </summary>
-        public bool Ok => (int)Code < 400;
+        public bool Ok => (int)Code >= 200 && (int)Code <= 299;
     }
 }

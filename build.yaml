@@ -1,9 +1,9 @@
 name: "Open Subtitles"
 guid: "4b9ed42f-5185-48b5-9803-6ff2989014c4"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-opensubtitles.png"
-version: "12"
-targetAbi: "10.7.7.0"
-framework: "net5.0"
+version: "15"
+targetAbi: "10.8.0.0"
+framework: "net6.0"
 owner: "jellyfin"
 overview: "Download subtitles for your media"
 description: "Download subtitles from the internet to use with your media files."
@@ -12,5 +12,5 @@ artifacts:
   - "Jellyfin.Plugin.OpenSubtitles.dll"
   - "OpenSubtitlesHandler.dll"
 changelog: |2-
-  ### Bug Fixes ###
-  - Fixes, language improvements, code cleanup & error logging (#67) @MBR-0001
+  ### Code or Repo Maintenance ###
+  - Fix build.yaml, fix new build errors (#81) @crobibero
