@@ -85,7 +85,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
             {
                 throw new ArgumentNullException(nameof(request));
             }
-            
+
             long.TryParse(request.GetProviderId(MetadataProvider.Imdb)?.TrimStart('t') ?? string.Empty, NumberStyles.Any, CultureInfo.InvariantCulture, out var imdbId);
 
             if (request.ContentType == VideoContentType.Episode && (!request.IndexNumber.HasValue || !request.ParentIndexNumber.HasValue || string.IsNullOrEmpty(request.SeriesName)))
