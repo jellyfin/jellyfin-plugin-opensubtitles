@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace OpenSubtitlesHandler.Models
+namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models
 {
     /// <summary>
     /// The login model.

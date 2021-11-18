@@ -12,10 +12,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../OpenSubtitlesHandler/OpenSubtitlesHandler.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Remove="Web\opensubtitles.html" />
     <None Remove="Web\opensubtitles.js" />
     <EmbeddedResource Include="Web\opensubtitles.html" />

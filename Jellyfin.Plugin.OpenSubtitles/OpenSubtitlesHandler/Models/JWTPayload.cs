@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace OpenSubtitlesHandler.Models
+namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models
 {
     /// <summary>
     /// The jwt payload.

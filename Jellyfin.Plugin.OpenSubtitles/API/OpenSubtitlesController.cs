@@ -3,10 +3,10 @@ using System.Net.Mime;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using OpenSubtitlesHandler.Models;
 
 namespace Jellyfin.Plugin.OpenSubtitles.API
 {

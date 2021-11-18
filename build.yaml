@@ -10,7 +10,6 @@ description: "Download subtitles from the internet to use with your media files.
 category: "Metadata"
 artifacts:
   - "Jellyfin.Plugin.OpenSubtitles.dll"
-  - "OpenSubtitlesHandler.dll"
 changelog: |2-
   ### New features and improvements ###
   - Better download limit handling (#83) @MBR-0001
