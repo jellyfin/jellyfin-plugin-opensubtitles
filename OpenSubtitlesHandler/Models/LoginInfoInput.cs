@@ -20,9 +20,8 @@ namespace OpenSubtitlesHandler.Models
         public string Password { get; set; } = null!;
 
         /// <summary>
-        /// Gets or sets the api key.
+        /// Gets or sets the custom api key.
         /// </summary>
-        [Required]
-        public string ApiKey { get; set; } = null!;
+        public string CustomApiKey { get; set; } = null!;
     }
 }
