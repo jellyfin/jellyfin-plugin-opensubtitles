@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace OpenSubtitlesHandler.Models.Responses
+namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models.Responses
 {
     /// <summary>
     /// The login info.

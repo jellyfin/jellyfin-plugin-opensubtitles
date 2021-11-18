@@ -11,7 +11,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace OpenSubtitlesHandler
+namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
 {
     /// <summary>
     /// Http util helper.

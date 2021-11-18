@@ -5,10 +5,10 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using OpenSubtitlesHandler.Models;
-using OpenSubtitlesHandler.Models.Responses;
+using Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models;
+using Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models.Responses;
 
-namespace OpenSubtitlesHandler
+namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
 {
     /// <summary>
     /// The open subtitles helper class.

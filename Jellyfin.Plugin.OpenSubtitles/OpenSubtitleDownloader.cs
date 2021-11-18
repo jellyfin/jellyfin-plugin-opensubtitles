@@ -10,14 +10,14 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.OpenSubtitles.Configuration;
+using Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler;
+using Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models.Responses;
 using MediaBrowser.Common.Extensions;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Subtitles;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
 using Microsoft.Extensions.Logging;
-using OpenSubtitlesHandler;
-using OpenSubtitlesHandler.Models.Responses;
 
 namespace Jellyfin.Plugin.OpenSubtitles
 {

@@ -2,7 +2,7 @@
 using System.Net;
 using System.Text.Json;
 
-namespace OpenSubtitlesHandler.Models
+namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models
 {
     /// <summary>
     /// The api response.
