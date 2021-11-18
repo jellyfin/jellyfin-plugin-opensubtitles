@@ -1,7 +1,7 @@
 name: "Open Subtitles"
 guid: "4b9ed42f-5185-48b5-9803-6ff2989014c4"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-opensubtitles.png"
-version: "15"
+version: "16"
 targetAbi: "10.8.0.0"
 framework: "net6.0"
 owner: "jellyfin"
@@ -12,5 +12,12 @@ artifacts:
   - "Jellyfin.Plugin.OpenSubtitles.dll"
   - "OpenSubtitlesHandler.dll"
 changelog: |2-
+  ### New features and improvements ###
+  - Better download limit handling (#83) @MBR-0001
+  - Implement default API key (#76) @MBR-0001
+
+  ### Dependency updates ###
+  - chore(deps): bump Microsoft.Extensions.Http from 5.0.0 to 6.0.0 (#79) @dependabot
+
   ### Code or Repo Maintenance ###
-  - Fix build.yaml, fix new build errors (#81) @crobibero
+  - chore(deps): bump Microsoft.Extensions.Http from 5.0.0 to 6.0.0 (#79) @dependabot
