@@ -21,12 +21,6 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models.Responses
         public int Remaining { get; set; }
 
         /// <summary>
-        /// Gets or sets the message.
-        /// </summary>
-        [JsonPropertyName("message")]
-        public string? Message { get; set; }
-
-        /// <summary>
         /// Gets or sets the reset time.
         /// </summary>
         [JsonPropertyName("reset_time_utc")]

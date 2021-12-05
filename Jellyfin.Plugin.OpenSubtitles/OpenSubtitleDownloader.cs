@@ -199,12 +199,10 @@ namespace Jellyfin.Plugin.OpenSubtitles
                     Comment = i.Attributes?.Comments,
                     CommunityRating = i.Attributes?.Ratings,
                     DownloadCount = i.Attributes?.DownloadCount,
-                    Format = i.Attributes?.Format ?? "srt",
+                    Format = "srt",
                     ProviderName = Name,
                     ThreeLetterISOLanguageName = request.Language,
-
-                    // new API (currently) does not return the format
-                    Id = $"{i.Attributes?.Format ?? "srt"}-{request.Language}-{i.Attributes?.Files[0].FileId}",
+                    Id = $"srt-{request.Language}-{i.Attributes?.Files[0].FileId}",
                     Name = i.Attributes?.Release,
                     DateCreated = i.Attributes?.UploadDate,
                     IsHashMatch = i.Attributes?.MovieHashMatch

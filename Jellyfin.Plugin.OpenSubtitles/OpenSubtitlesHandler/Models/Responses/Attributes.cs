@@ -16,12 +16,6 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models.Responses
         public int DownloadCount { get; set; }
 
         /// <summary>
-        /// Gets or sets the subtitle format.
-        /// </summary>
-        [JsonPropertyName("format")]
-        public string? Format { get; set; }
-
-        /// <summary>
         /// Gets or sets the subtitle rating.
         /// </summary>
         [JsonPropertyName("ratings")]
