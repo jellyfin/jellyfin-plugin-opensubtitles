@@ -101,12 +101,21 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
         /// </summary>
         /// <param name="url">the subtitle url.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>The subtitle string.</returns>
-        public static async Task<ApiResponse<string>> DownloadSubtitleAsync(string url, CancellationToken cancellationToken)
+        /// <returns>The Http response.</returns>
+        public static async Task<HttpResponse> DownloadSubtitleAsync(string url, CancellationToken cancellationToken)
         {
-            var response = await RequestHandler.SendRequestAsync(url, HttpMethod.Get, null, null, null, 1, cancellationToken).ConfigureAwait(false);
+            var response = await OpenSubtitlesRequestHelper.Instance!.SendRequestAsync(
+                url,
+                HttpMethod.Get,
+                null,
+                new Dictionary<string, string>(),
+                cancellationToken).ConfigureAwait(false);
 
-            return new ApiResponse<string>(response);
+            return new HttpResponse
+            {
+                Body = response.body,
+                Code = response.statusCode
+            };
         }
 
         /// <summary>

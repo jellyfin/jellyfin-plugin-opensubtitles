@@ -314,7 +314,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             var res = await OpenSubtitlesHandler.OpenSubtitles.DownloadSubtitleAsync(info.Data.Link, cancellationToken).ConfigureAwait(false);
 
-            if (!res.Ok || string.IsNullOrWhiteSpace(res.Data))
+            if (res.Code != HttpStatusCode.OK || string.IsNullOrWhiteSpace(res.Body))
             {
                 var msg = string.Format(
                     CultureInfo.InvariantCulture,
@@ -325,7 +325,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 throw new HttpRequestException(msg);
             }
 
-            return new SubtitleResponse { Format = format, Language = language, Stream = new MemoryStream(Encoding.UTF8.GetBytes(res.Data)) };
+            return new SubtitleResponse { Format = format, Language = language, Stream = new MemoryStream(Encoding.UTF8.GetBytes(res.Body)) };
         }
 
         private async Task Login(CancellationToken cancellationToken)
