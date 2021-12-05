@@ -26,7 +26,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
         public static async Task<ApiResponse<LoginInfo>> LogInAsync(string username, string password, string apiKey, CancellationToken cancellationToken)
         {
             var body = new { username, password };
-            var response = await RequestHandler.SendRequestAsync("/login", HttpMethod.Post, body, null, apiKey, cancellationToken).ConfigureAwait(false);
+            var response = await RequestHandler.SendRequestAsync("/login", HttpMethod.Post, body, null, apiKey, 1, cancellationToken).ConfigureAwait(false);
 
             return new ApiResponse<LoginInfo>(response);
         }
@@ -47,7 +47,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
 
             var headers = new Dictionary<string, string> { { "Authorization", user.Token } };
 
-            var response = await RequestHandler.SendRequestAsync("/logout", HttpMethod.Delete, null, headers, apiKey, cancellationToken).ConfigureAwait(false);
+            var response = await RequestHandler.SendRequestAsync("/logout", HttpMethod.Delete, null, headers, apiKey, 1, cancellationToken).ConfigureAwait(false);
 
             return new ApiResponse<object>(response).Ok;
         }
@@ -68,7 +68,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
 
             var headers = new Dictionary<string, string> { { "Authorization", user.Token } };
 
-            var response = await RequestHandler.SendRequestAsync("/infos/user", HttpMethod.Get, null, headers, apiKey, cancellationToken).ConfigureAwait(false);
+            var response = await RequestHandler.SendRequestAsync("/infos/user", HttpMethod.Get, null, headers, apiKey, 1, cancellationToken).ConfigureAwait(false);
 
             return new ApiResponse<EncapsulatedUserInfo>(response);
         }
@@ -91,7 +91,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
             var headers = new Dictionary<string, string> { { "Authorization", user.Token } };
 
             var body = new { file_id = file };
-            var response = await RequestHandler.SendRequestAsync("/download", HttpMethod.Post, body, headers, apiKey, cancellationToken).ConfigureAwait(false);
+            var response = await RequestHandler.SendRequestAsync("/download", HttpMethod.Post, body, headers, apiKey, 1, cancellationToken).ConfigureAwait(false);
 
             return new ApiResponse<SubtitleDownloadInfo>(response, $"file id: {file}");
         }
@@ -104,7 +104,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
         /// <returns>The subtitle string.</returns>
         public static async Task<ApiResponse<string>> DownloadSubtitleAsync(string url, CancellationToken cancellationToken)
         {
-            var response = await RequestHandler.SendRequestAsync(url, HttpMethod.Get, null, null, null, cancellationToken).ConfigureAwait(false);
+            var response = await RequestHandler.SendRequestAsync(url, HttpMethod.Get, null, null, null, 1, cancellationToken).ConfigureAwait(false);
 
             return new ApiResponse<string>(response);
         }
@@ -141,7 +141,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
                     opts.Add(key.ToLower(CultureInfo.InvariantCulture), value.ToLower(CultureInfo.InvariantCulture));
                 }
 
-                response = await RequestHandler.SendRequestAsync($"/subtitles?{opts}", HttpMethod.Get, null, null, apiKey, cancellationToken).ConfigureAwait(false);
+                response = await RequestHandler.SendRequestAsync($"/subtitles?{opts}", HttpMethod.Get, null, null, apiKey, 1, cancellationToken).ConfigureAwait(false);
 
                 last = new ApiResponse<SearchResult>(response, $"query: {opts}", $"page: {current}");
 
@@ -177,7 +177,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
         /// <returns>The list of languages.</returns>
         public static async Task<ApiResponse<EncapsulatedLanguageList>> GetLanguageList(string apiKey, CancellationToken cancellationToken)
         {
-            var response = await RequestHandler.SendRequestAsync("/infos/languages", HttpMethod.Get, null, null, apiKey, cancellationToken).ConfigureAwait(false);
+            var response = await RequestHandler.SendRequestAsync("/infos/languages", HttpMethod.Get, null, null, apiKey, 1, cancellationToken).ConfigureAwait(false);
 
             return new ApiResponse<EncapsulatedLanguageList>(response);
         }
