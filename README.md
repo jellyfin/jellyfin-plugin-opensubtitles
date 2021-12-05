@@ -18,7 +18,7 @@
 
 ## About
 
-This is a plugin allows you to download subtitles from [Open Subtitles](https://opensubtitles.org) for your media.
+This is a plugin allows you to download subtitles from [Open Subtitles](https://opensubtitles.com) for your media.
 
 ## Installation
 
