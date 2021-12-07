@@ -30,96 +30,96 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
         /// <param name="body">The request body.</param>
         /// <param name="headers">The headers.</param>
         /// <param name="apiKey">The api key.</param>
+        /// <param name="attempt">The request attempt key.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The response.</returns>
         /// <exception cref="ArgumentException">API Key is empty.</exception>
-        public static async Task<HttpResponse> SendRequestAsync(string endpoint, HttpMethod method, object? body, Dictionary<string, string>? headers, string? apiKey, CancellationToken cancellationToken)
+        public static async Task<HttpResponse> SendRequestAsync(
+            string endpoint,
+            HttpMethod method,
+            object? body,
+            Dictionary<string, string>? headers,
+            string? apiKey,
+            int attempt,
+            CancellationToken cancellationToken)
         {
-            var url = endpoint.StartsWith('/') ? BaseApiUrl + endpoint : endpoint;
-            var isFullUrl = url.StartsWith(BaseApiUrl, StringComparison.OrdinalIgnoreCase);
-
             headers ??= new Dictionary<string, string>();
 
-            if (isFullUrl)
+            if (string.IsNullOrWhiteSpace(apiKey))
             {
-                if (string.IsNullOrWhiteSpace(apiKey))
-                {
-                    throw new ArgumentException("Provided API key is blank", nameof(apiKey));
-                }
+                throw new ArgumentException("Provided API key is blank", nameof(apiKey));
+            }
 
-                if (!headers.ContainsKey("Api-Key"))
-                {
-                    headers.Add("Api-Key", apiKey);
-                }
+            if (!headers.ContainsKey("Api-Key"))
+            {
+                headers.Add("Api-Key", apiKey);
+            }
 
-                if (_hRemaining == 0)
+            if (_hRemaining == 0)
+            {
+                await Task.Delay(1000 * _hReset, cancellationToken).ConfigureAwait(false);
+                _hRemaining = -1;
+                _hReset = -1;
+            }
+
+            if (_requestCount == 40)
+            {
+                var diff = DateTime.UtcNow.Subtract(_windowStart).TotalSeconds;
+                if (diff <= 10)
                 {
-                    await Task.Delay(1000 * _hReset, cancellationToken).ConfigureAwait(false);
+                    await Task.Delay(1000 * (int)Math.Ceiling(10 - diff), cancellationToken).ConfigureAwait(false);
                     _hRemaining = -1;
                     _hReset = -1;
                 }
-
-                if (_requestCount == 40)
-                {
-                    var diff = DateTime.UtcNow.Subtract(_windowStart).TotalSeconds;
-                    if (diff <= 10)
-                    {
-                        await Task.Delay(1000 * (int)Math.Ceiling(10 - diff), cancellationToken).ConfigureAwait(false);
-                        _hRemaining = -1;
-                        _hReset = -1;
-                    }
-                }
-
-                if (DateTime.UtcNow.Subtract(_windowStart).TotalSeconds >= 10)
-                {
-                    _windowStart = DateTime.UtcNow;
-                    _requestCount = 0;
-                }
             }
 
-            var (response, responseHeaders, httpStatusCode) = await OpenSubtitlesRequestHelper.Instance!.SendRequestAsync(url, method, body, headers, cancellationToken).ConfigureAwait(false);
-
-            if (!isFullUrl)
+            if (DateTime.UtcNow.Subtract(_windowStart).TotalSeconds >= 10)
             {
-                return new HttpResponse
-                {
-                    Body = response,
-                    Code = httpStatusCode
-                };
+                _windowStart = DateTime.UtcNow;
+                _requestCount = 0;
             }
+
+            var response = await OpenSubtitlesRequestHelper.Instance!.SendRequestAsync(BaseApiUrl + endpoint, method, body, headers, cancellationToken).ConfigureAwait(false);
 
             _requestCount++;
 
-            if (responseHeaders.TryGetValue("x-ratelimit-remaining-second", out var value))
+            if (response.headers.TryGetValue("x-ratelimit-remaining-second", out var value))
             {
                 _ = int.TryParse(value, out _hRemaining);
             }
 
-            if (responseHeaders.TryGetValue("ratelimit-reset", out value))
+            if (response.headers.TryGetValue("ratelimit-reset", out value))
             {
                 _ = int.TryParse(value, out _hReset);
             }
 
-            if (httpStatusCode != HttpStatusCode.TooManyRequests)
+            if (response.statusCode == HttpStatusCode.TooManyRequests && attempt <= 4)
             {
-                if (!responseHeaders.TryGetValue("x-reason", out value))
-                {
-                    value = string.Empty;
-                }
+                var time = _hReset == -1 ? 5 : _hReset;
 
-                return new HttpResponse
-                {
-                    Body = response,
-                    Code = httpStatusCode,
-                    Reason = value
-                };
+                await Task.Delay(time * 1000, cancellationToken).ConfigureAwait(false);
+
+                return await SendRequestAsync(endpoint, method, body, headers, apiKey, attempt + 1, cancellationToken).ConfigureAwait(false);
             }
 
-            var time = _hReset == -1 ? 5 : _hReset;
+            if (response.statusCode == HttpStatusCode.BadGateway && attempt <= 3)
+            {
+                await Task.Delay(500, cancellationToken).ConfigureAwait(false);
 
-            await Task.Delay(time * 1000, cancellationToken).ConfigureAwait(false);
+                return await SendRequestAsync(endpoint, method, body, headers, apiKey, attempt + 1, cancellationToken).ConfigureAwait(false);
+            }
 
-            return await SendRequestAsync(endpoint, method, body, headers, apiKey, cancellationToken).ConfigureAwait(false);
+            if (!response.headers.TryGetValue("x-reason", out value))
+            {
+                value = string.Empty;
+            }
+
+            return new HttpResponse
+            {
+                Body = response.body,
+                Code = response.statusCode,
+                Reason = value
+            };
         }
     }
 }

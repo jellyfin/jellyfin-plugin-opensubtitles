@@ -199,12 +199,10 @@ namespace Jellyfin.Plugin.OpenSubtitles
                     Comment = i.Attributes?.Comments,
                     CommunityRating = i.Attributes?.Ratings,
                     DownloadCount = i.Attributes?.DownloadCount,
-                    Format = i.Attributes?.Format ?? "srt",
+                    Format = "srt",
                     ProviderName = Name,
                     ThreeLetterISOLanguageName = request.Language,
-
-                    // new API (currently) does not return the format
-                    Id = $"{i.Attributes?.Format ?? "srt"}-{request.Language}-{i.Attributes?.Files[0].FileId}",
+                    Id = $"srt-{request.Language}-{i.Attributes?.Files[0].FileId}",
                     Name = i.Attributes?.Release,
                     DateCreated = i.Attributes?.UploadDate,
                     IsHashMatch = i.Attributes?.MovieHashMatch
@@ -314,7 +312,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             var res = await OpenSubtitlesHandler.OpenSubtitles.DownloadSubtitleAsync(info.Data.Link, cancellationToken).ConfigureAwait(false);
 
-            if (!res.Ok || string.IsNullOrWhiteSpace(res.Data))
+            if (res.Code != HttpStatusCode.OK || string.IsNullOrWhiteSpace(res.Body))
             {
                 var msg = string.Format(
                     CultureInfo.InvariantCulture,
@@ -325,7 +323,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 throw new HttpRequestException(msg);
             }
 
-            return new SubtitleResponse { Format = format, Language = language, Stream = new MemoryStream(Encoding.UTF8.GetBytes(res.Data)) };
+            return new SubtitleResponse { Format = format, Language = language, Stream = new MemoryStream(Encoding.UTF8.GetBytes(res.Body)) };
         }
 
         private async Task Login(CancellationToken cancellationToken)

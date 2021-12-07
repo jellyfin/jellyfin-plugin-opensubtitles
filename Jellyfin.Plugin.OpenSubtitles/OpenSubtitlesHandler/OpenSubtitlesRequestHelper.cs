@@ -79,7 +79,12 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
             }
         }
 
-        internal async Task<(string, Dictionary<string, string>, HttpStatusCode)> SendRequestAsync(string url, HttpMethod method, object? body, Dictionary<string, string> headers, CancellationToken cancellationToken)
+        internal async Task<(string body, Dictionary<string, string> headers, HttpStatusCode statusCode)> SendRequestAsync(
+            string url,
+            HttpMethod method,
+            object? body,
+            Dictionary<string, string> headers,
+            CancellationToken cancellationToken)
         {
             var client = _clientFactory.CreateClient("Default");
 
