@@ -43,8 +43,6 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
             int attempt,
             CancellationToken cancellationToken)
         {
-            var url = BaseApiUrl + endpoint;
-
             headers ??= new Dictionary<string, string>();
 
             if (string.IsNullOrWhiteSpace(apiKey))
@@ -81,7 +79,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
                 _requestCount = 0;
             }
 
-            var response = await OpenSubtitlesRequestHelper.Instance!.SendRequestAsync(url, method, body, headers, cancellationToken).ConfigureAwait(false);
+            var response = await OpenSubtitlesRequestHelper.Instance!.SendRequestAsync(BaseApiUrl + endpoint, method, body, headers, cancellationToken).ConfigureAwait(false);
 
             _requestCount++;
 
