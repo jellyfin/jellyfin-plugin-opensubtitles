@@ -42,12 +42,6 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models
                 Body = response.Reason;
             }
 
-            if (typeof(T) == typeof(string))
-            {
-                Data = (T)(object)Body;
-                return;
-            }
-
             if (!Ok)
             {
                 // don't bother parsing json if HTTP status code is bad
