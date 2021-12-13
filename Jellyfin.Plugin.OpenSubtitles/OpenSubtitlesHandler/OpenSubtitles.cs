@@ -149,10 +149,12 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
                 {
                     opts.Add(key.ToLower(CultureInfo.InvariantCulture), value.ToLower(CultureInfo.InvariantCulture));
                 }
+                
+                var qs = opts.ToString().Replace("%20", "+");
 
-                response = await RequestHandler.SendRequestAsync($"/subtitles?{opts}", HttpMethod.Get, null, null, apiKey, 1, cancellationToken).ConfigureAwait(false);
+                response = await RequestHandler.SendRequestAsync($"/subtitles?{qs}", HttpMethod.Get, null, null, apiKey, 1, cancellationToken).ConfigureAwait(false);
 
-                last = new ApiResponse<SearchResult>(response, $"query: {opts}", $"page: {current}");
+                last = new ApiResponse<SearchResult>(response, $"query: {qs}", $"page: {current}");
 
                 if (!last.Ok || last.Data == null)
                 {
