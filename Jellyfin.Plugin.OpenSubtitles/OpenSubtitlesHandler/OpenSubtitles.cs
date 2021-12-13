@@ -149,8 +149,8 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
                 {
                     opts.Add(key.ToLower(CultureInfo.InvariantCulture), value.ToLower(CultureInfo.InvariantCulture));
                 }
-                
-                var qs = opts.ToString().Replace("%20", "+");
+
+                var qs = opts.ToString()!.Replace("%20", "+", StringComparison.Ordinal);
 
                 response = await RequestHandler.SendRequestAsync($"/subtitles?{qs}", HttpMethod.Get, null, null, apiKey, 1, cancellationToken).ConfigureAwait(false);
 
