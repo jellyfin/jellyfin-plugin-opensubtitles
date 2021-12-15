@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models;
 
 namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
@@ -120,6 +123,33 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
                 Code = response.statusCode,
                 Reason = value
             };
+        }
+
+        /// <summary>
+        /// Append the given query keys and values to the URI.
+        /// </summary>
+        /// <param name="path">The base URI.</param>
+        /// <param name="param">A dictionary of query keys and values to append.</param>
+        /// <returns>The combined result.</returns>
+        public static string AddQueryString(string path, Dictionary<string, string> param)
+        {
+            if (param.Count == 0)
+            {
+                return path;
+            }
+
+            var url = new StringBuilder(path);
+            url.Append('?');
+            foreach (var (key, value) in param.OrderBy(x => x.Key))
+            {
+                url.Append(HttpUtility.UrlEncode(key))
+                    .Append('=')
+                    .Append(HttpUtility.UrlEncode(value))
+                    .Append('&');
+            }
+
+            url.Length -= 1; // Remove last &
+            return url.ToString();
         }
     }
 }

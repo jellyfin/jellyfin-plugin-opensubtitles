@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -127,7 +126,11 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
         /// <returns>The list of response data.</returns>
         public static async Task<ApiResponse<IReadOnlyList<ResponseData>>> SearchSubtitlesAsync(Dictionary<string, string> options, string apiKey, CancellationToken cancellationToken)
         {
-            var opts = System.Web.HttpUtility.ParseQueryString(string.Empty);
+            var opts = new Dictionary<string, string>();
+            foreach (var (key, value) in options)
+            {
+                opts.Add(key.ToLowerInvariant(), value.ToLowerInvariant());
+            }
 
             var max = -1;
             var current = 1;
@@ -138,23 +141,15 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
 
             do
             {
-                opts.Clear();
-
                 if (current > 1)
                 {
                     options["page"] = current.ToString(CultureInfo.InvariantCulture);
                 }
 
-                foreach (var (key, value) in options.OrderBy(x => x.Key))
-                {
-                    opts.Add(key.ToLower(CultureInfo.InvariantCulture), value.ToLower(CultureInfo.InvariantCulture));
-                }
+                var url = RequestHandler.AddQueryString("/subtitles", opts);
+                response = await RequestHandler.SendRequestAsync(url, HttpMethod.Get, null, null, apiKey, 1, cancellationToken).ConfigureAwait(false);
 
-                var qs = opts.ToString()!.Replace("%20", "+", StringComparison.Ordinal);
-
-                response = await RequestHandler.SendRequestAsync($"/subtitles?{qs}", HttpMethod.Get, null, null, apiKey, 1, cancellationToken).ConfigureAwait(false);
-
-                last = new ApiResponse<SearchResult>(response, $"query: {qs}", $"page: {current}");
+                last = new ApiResponse<SearchResult>(response, $"url: {url}", $"page: {current}");
 
                 if (!last.Ok || last.Data == null)
                 {

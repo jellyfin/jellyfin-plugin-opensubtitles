@@ -1,13 +1,12 @@
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Net.Mime;
-using System.Text;
-using System.Text.Json;
+using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -38,45 +37,32 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
         public static OpenSubtitlesRequestHelper? Instance { get; set; }
 
         /// <summary>
-        /// Compute movie hash.
+        /// Calculates: size + 64bit chksum of the first and last 64k (even if they overlap because the file is smaller than 128k).
         /// </summary>
-        /// <param name="stream">The input stream.</param>
+        /// <param name="input">The input stream.</param>
         /// <returns>The hash as Hexadecimal string.</returns>
-        public static string ComputeHash(Stream stream)
+        public static string ComputeHash(Stream input)
         {
-            var hash = ComputeMovieHash(stream);
-            return Convert.ToHexString(hash).ToLowerInvariant();
-        }
+            const int HashLength = 8; // 64 bit hash
+            const long HashPos = 64 * 1024; // 64k
 
-        /// <summary>
-        /// Compute hash of specified movie stream.
-        /// </summary>
-        /// <returns>Hash of the movie.</returns>
-        private static byte[] ComputeMovieHash(Stream input)
-        {
-            using (input)
+            long streamsize = input.Length;
+            ulong hash = (ulong)streamsize;
+
+            Span<byte> buffer = stackalloc byte[HashLength];
+            while (input.Position < HashPos && input.Read(buffer) > 0)
             {
-                long streamSize = input.Length, lHash = streamSize;
-                int size = sizeof(long), count = 65536 / size;
-                var buffer = new byte[size];
-
-                for (int i = 0; i < count && input.Read(buffer, 0, size) > 0; i++)
-                {
-                    lHash += BitConverter.ToInt64(buffer, 0);
-                }
-
-                input.Position = Math.Max(0, streamSize - 65536);
-
-                for (int i = 0; i < count && input.Read(buffer, 0, size) > 0; i++)
-                {
-                    lHash += BitConverter.ToInt64(buffer, 0);
-                }
-
-                var result = BitConverter.GetBytes(lHash);
-                Array.Reverse(result);
-
-                return result;
+                hash += BinaryPrimitives.ReadUInt64LittleEndian(buffer);
             }
+
+            input.Seek(-HashPos, SeekOrigin.End);
+            while (input.Read(buffer) > 0)
+            {
+                hash += BinaryPrimitives.ReadUInt64LittleEndian(buffer);
+            }
+
+            BinaryPrimitives.WriteUInt64BigEndian(buffer, hash);
+            return Convert.ToHexString(buffer).ToLowerInvariant();
         }
 
         internal async Task<(string body, Dictionary<string, string> headers, HttpStatusCode statusCode)> SendRequestAsync(
@@ -91,7 +77,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
             HttpContent? content = null;
             if (method != HttpMethod.Get && body != null)
             {
-                content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, MediaTypeNames.Application.Json);
+                content = JsonContent.Create(body);
             }
 
             using var request = new HttpRequestMessage
