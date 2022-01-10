@@ -170,7 +170,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
 
                 final.AddRange(last.Data.Data);
             }
-            while (current <= max && last.Data.Data.Count == 100);
+            while (current <= max);
 
             return new ApiResponse<IReadOnlyList<ResponseData>>(final, response);
         }
