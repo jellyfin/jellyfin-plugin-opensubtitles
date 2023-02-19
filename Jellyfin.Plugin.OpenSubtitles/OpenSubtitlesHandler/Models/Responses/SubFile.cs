@@ -11,5 +11,5 @@ public class SubFile
     /// Gets or sets the file id.
     /// </summary>
     [JsonPropertyName("file_id")]
-    public int FileId { get; set; }
+    public int? FileId { get; set; }
 }

@@ -172,11 +172,11 @@ public class OpenSubtitleDownloader : ISubtitleProvider
 
         bool MediaFilter(ResponseData x) =>
             x.Attributes?.FeatureDetails?.FeatureType == (request.ContentType == VideoContentType.Episode ? "Episode" : "Movie")
-            && request.ContentType == VideoContentType.Episode
+            && x.Attributes?.Files?.Count > 0 && x.Attributes.Files[0].FileId != null
+            && (request.ContentType == VideoContentType.Episode
                 ? x.Attributes.FeatureDetails.SeasonNumber == request.ParentIndexNumber
                     && x.Attributes.FeatureDetails.EpisodeNumber == request.IndexNumber
-                : x.Attributes?.FeatureDetails?.ImdbId == imdbId
-            && x.Attributes?.Files?.Count > 0;
+                : x.Attributes?.FeatureDetails?.ImdbId == imdbId);
 
         if (searchResponse.Data is null)
         {
