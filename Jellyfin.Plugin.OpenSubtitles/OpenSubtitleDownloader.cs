@@ -116,26 +116,33 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             var language = await GetLanguage(request.TwoLetterISOLanguageName, cancellationToken).ConfigureAwait(false);
 
-            string hash;
-            try
+            string? hash = null;
+            if (!Path.GetExtension(request.MediaPath).Equals(".strm", StringComparison.OrdinalIgnoreCase))
             {
-                #pragma warning disable CA2007
-                await using var fileStream = File.OpenRead(request.MediaPath);
-                #pragma warning restore CA2007
+                try
+                {
+                    #pragma warning disable CA2007
+                    await using var fileStream = File.OpenRead(request.MediaPath);
+                    #pragma warning restore CA2007
 
-                hash = OpenSubtitlesRequestHelper.ComputeHash(fileStream);
-            }
-            catch (IOException ex)
-            {
-                throw new IOException(string.Format(CultureInfo.InvariantCulture, "IOException while computing hash for {0}", request.MediaPath), ex);
+                    hash = OpenSubtitlesRequestHelper.ComputeHash(fileStream);
+                }
+                catch (IOException ex)
+                {
+                    throw new IOException(string.Format(CultureInfo.InvariantCulture, "IOException while computing hash for {0}", request.MediaPath), ex);
+                }
             }
 
             var options = new Dictionary<string, string>
             {
                 { "languages", language },
-                { "moviehash", hash },
                 { "type", request.ContentType == VideoContentType.Episode ? "episode" : "movie" }
             };
+
+            if (hash is not null)
+            {
+                options.Add("moviehash", hash);
+            }
 
             // If we have the IMDb ID we use that, otherwise query with the details
             if (imdbId != 0)
@@ -160,7 +167,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 }
             }
 
-            if (request.IsPerfectMatch)
+            if (request.IsPerfectMatch && hash is not null)
             {
                 options.Add("moviehash_match", "only");
             }
