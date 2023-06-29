@@ -3,13 +3,20 @@
 };
 
 export default function (view, params) {
+    let credentialsWarning;
+
     view.addEventListener('viewshow', function () {
         Dashboard.showLoadingMsg();
         const page = this;
+        credentialsWarning = page.querySelector("#expiredCredentialsWarning");
+
         ApiClient.getPluginConfiguration(OpenSubtitlesConfig.pluginUniqueId).then(function (config) {
             page.querySelector('#username').value = config.Username || '';
             page.querySelector('#password').value = config.Password || '';
             page.querySelector('#apikey').value = config.CustomApiKey || '';
+            if (config.CredentialsInvalid) {
+                credentialsWarning.style.display = null;
+            }
             Dashboard.hideLoadingMsg();
         });
     });
@@ -40,8 +47,10 @@ export default function (view, params) {
                     config.Username = username;
                     config.Password = password;
                     config.CustomApiKey = apiKey;
+                    config.CredentialsInvalid = false;
 
                     ApiClient.updatePluginConfiguration(OpenSubtitlesConfig.pluginUniqueId, config).then(function (result) {
+                        credentialsWarning.style.display = 'none';
                         Dashboard.processPluginConfigurationUpdateResult(result);
                     });
                 }
