@@ -367,7 +367,10 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             if (!loginResponse.Ok)
             {
-                if (loginResponse.Code == HttpStatusCode.Unauthorized || (loginResponse.Code == HttpStatusCode.Forbidden && ApiKey == options.CustomApiKey))
+                // 400 = Using email, 401 = invalid credentials, 403 = invalid api key
+                if ((loginResponse.Code == HttpStatusCode.BadRequest && options.Username.Contains('@', StringComparison.InvariantCultureIgnoreCase))
+                    || loginResponse.Code == HttpStatusCode.Unauthorized
+                    || (loginResponse.Code == HttpStatusCode.Forbidden && ApiKey == options.CustomApiKey))
                 {
                     _logger.LogError("Login failed due to invalid credentials/API key, invalidating them ({Code} - {Body})", loginResponse.Code, loginResponse.Body);
                     options.CredentialsInvalid = true;
