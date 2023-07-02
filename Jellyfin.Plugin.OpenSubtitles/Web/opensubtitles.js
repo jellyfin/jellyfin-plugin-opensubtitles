@@ -36,11 +36,13 @@ export default function (view, params) {
             }
 
             const el = form.querySelector('#ossresponse');
+            const saveButton = form.querySelector('#save-button');
             
             const data = JSON.stringify({ Username: username, Password: password, CustomApiKey: apiKey });
             const url = ApiClient.getUrl('Jellyfin.Plugin.OpenSubtitles/ValidateLoginInfo');
 
             const handler = response => response.json().then(res => {
+                saveButton.disabled = false;
                 if (response.ok) {
                     el.innerText = `Login info validated, this account can download ${res.Downloads} subtitles per day`;
 
@@ -65,6 +67,7 @@ export default function (view, params) {
                 }
             });
 
+            saveButton.disabled = true;
             ApiClient.ajax({ type: 'POST', url, data, contentType: 'application/json'}).then(handler).catch(handler);
         });
         return false;
