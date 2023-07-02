@@ -89,6 +89,13 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             await Login(cancellationToken).ConfigureAwait(false);
 
+            if (request.IsAutomated && _login is null)
+            {
+                // Login attempt failed, since this is a task to download subtitles there's no point in continuing
+                _logger.LogDebug("Returning empty results because login failed");
+                return Enumerable.Empty<RemoteSubtitleInfo>();
+            }
+
             if (request.IsAutomated && _login?.User?.RemainingDownloads <= 0)
             {
                 if (_lastRatelimitLog == null || DateTime.UtcNow.Subtract(_lastRatelimitLog.Value).TotalSeconds > 60)
@@ -346,6 +353,12 @@ namespace Jellyfin.Plugin.OpenSubtitles
                 throw new AuthenticationException("Account username and/or password are not set up");
             }
 
+            if (options.CredentialsInvalid)
+            {
+                _logger.LogDebug("Skipping login due to credentials being invalid");
+                return;
+            }
+
             var loginResponse = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(
                 options.Username,
                 options.Password,
@@ -354,7 +367,20 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             if (!loginResponse.Ok)
             {
-                _logger.LogError("Login failed: {Code} - {Body}", loginResponse.Code, loginResponse.Body);
+                // 400 = Using email, 401 = invalid credentials, 403 = invalid api key
+                if ((loginResponse.Code == HttpStatusCode.BadRequest && options.Username.Contains('@', StringComparison.OrdinalIgnoreCase))
+                    || loginResponse.Code == HttpStatusCode.Unauthorized
+                    || (loginResponse.Code == HttpStatusCode.Forbidden && ApiKey == options.CustomApiKey))
+                {
+                    _logger.LogError("Login failed due to invalid credentials/API key, invalidating them ({Code} - {Body})", loginResponse.Code, loginResponse.Body);
+                    options.CredentialsInvalid = true;
+                    OpenSubtitlesPlugin.Instance!.SaveConfiguration(options);
+                }
+                else
+                {
+                    _logger.LogError("Login failed: {Code} - {Body}", loginResponse.Code, loginResponse.Body);
+                }
+
                 throw new AuthenticationException("Authentication to OpenSubtitles failed.");
             }
 

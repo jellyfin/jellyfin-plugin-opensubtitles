@@ -21,5 +21,10 @@ namespace Jellyfin.Plugin.OpenSubtitles.Configuration
         /// Gets or sets the custom API Key.
         /// </summary>
         public string CustomApiKey { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the credentials are invalid.
+        /// </summary>
+        public bool CredentialsInvalid { get; set; } = false;
     }
 }

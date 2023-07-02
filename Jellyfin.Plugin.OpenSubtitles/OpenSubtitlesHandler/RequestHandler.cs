@@ -117,6 +117,12 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
                 value = string.Empty;
             }
 
+            if ((int)response.statusCode >= 400 && (int)response.statusCode <= 499)
+            {
+                // Wait 1s after a 4xx response
+                await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
+            }
+
             return new HttpResponse
             {
                 Body = response.body,
