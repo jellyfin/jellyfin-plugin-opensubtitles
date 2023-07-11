@@ -84,6 +84,13 @@ public class OpenSubtitleDownloader : ISubtitleProvider
 
         await Login(cancellationToken).ConfigureAwait(false);
 
+        if (request.IsAutomated && _login is null)
+        {
+            // Login attempt failed, since this is a task to download subtitles there's no point in continuing
+            _logger.LogDebug("Returning empty results because login failed");
+            return Enumerable.Empty<RemoteSubtitleInfo>();
+        }
+
         if (request.IsAutomated && _login?.User?.RemainingDownloads <= 0)
         {
             if (_lastRatelimitLog is null || DateTime.UtcNow.Subtract(_lastRatelimitLog.Value).TotalSeconds > 60)
@@ -111,26 +118,33 @@ public class OpenSubtitleDownloader : ISubtitleProvider
 
         var language = await GetLanguage(request.TwoLetterISOLanguageName, cancellationToken).ConfigureAwait(false);
 
-        string hash;
-        try
+        string? hash = null;
+        if (!Path.GetExtension(request.MediaPath).Equals(".strm", StringComparison.OrdinalIgnoreCase))
         {
-            #pragma warning disable CA2007
-            await using var fileStream = File.OpenRead(request.MediaPath);
-            #pragma warning restore CA2007
+            try
+            {
+                #pragma warning disable CA2007
+                await using var fileStream = File.OpenRead(request.MediaPath);
+                #pragma warning restore CA2007
 
-            hash = OpenSubtitlesRequestHelper.ComputeHash(fileStream);
-        }
-        catch (IOException ex)
-        {
-            throw new IOException(string.Format(CultureInfo.InvariantCulture, "IOException while computing hash for {0}", request.MediaPath), ex);
+                hash = OpenSubtitlesRequestHelper.ComputeHash(fileStream);
+            }
+            catch (IOException ex)
+            {
+                throw new IOException(string.Format(CultureInfo.InvariantCulture, "IOException while computing hash for {0}", request.MediaPath), ex);
+            }
         }
 
         var options = new Dictionary<string, string>
         {
             { "languages", language },
-            { "moviehash", hash },
             { "type", request.ContentType == VideoContentType.Episode ? "episode" : "movie" }
         };
+
+        if (hash is not null)
+        {
+            options.Add("moviehash", hash);
+        }
 
         // If we have the IMDb ID we use that, otherwise query with the details
         if (imdbId != 0)
@@ -155,7 +169,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             }
         }
 
-        if (request.IsPerfectMatch)
+        if (request.IsPerfectMatch && hash is not null)
         {
             options.Add("moviehash_match", "only");
         }
@@ -338,6 +352,12 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             throw new AuthenticationException("Account username and/or password are not set up");
         }
 
+        if (_configuration.CredentialsInvalid)
+        {
+            _logger.LogDebug("Skipping login due to credentials being invalid");
+            return;
+        }
+
         var loginResponse = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(
             _configuration.Username,
             _configuration.Password,
@@ -346,7 +366,20 @@ public class OpenSubtitleDownloader : ISubtitleProvider
 
         if (!loginResponse.Ok)
         {
-            _logger.LogError("Login failed: {Code} - {Body}", loginResponse.Code, loginResponse.Body);
+            // 400 = Using email, 401 = invalid credentials, 403 = invalid api key
+            if ((loginResponse.Code == HttpStatusCode.BadRequest && options.Username.Contains('@', StringComparison.OrdinalIgnoreCase))
+                || loginResponse.Code == HttpStatusCode.Unauthorized
+                || (loginResponse.Code == HttpStatusCode.Forbidden && ApiKey == options.CustomApiKey))
+            {
+                _logger.LogError("Login failed due to invalid credentials/API key, invalidating them ({Code} - {Body})", loginResponse.Code, loginResponse.Body);
+                _configuration.CredentialsInvalid = true;
+                OpenSubtitlesPlugin.Instance!.SaveConfiguration(_configuration);
+            }
+            else
+            {
+                _logger.LogError("Login failed: {Code} - {Body}", loginResponse.Code, loginResponse.Body);
+            }
+
             throw new AuthenticationException("Authentication to OpenSubtitles failed.");
         }
 
