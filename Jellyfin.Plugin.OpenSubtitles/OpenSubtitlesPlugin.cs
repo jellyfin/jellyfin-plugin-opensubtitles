@@ -26,6 +26,8 @@ public class OpenSubtitlesPlugin : BasePlugin<PluginConfiguration>, IHasWebPages
     public OpenSubtitlesPlugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer)
         : base(applicationPaths, xmlSerializer)
     {
+        Instance = this;
+
         ConfigurationChanged += (_, _) =>
         {
             OpenSubtitleDownloader.Instance?.ConfigurationChanged(this.Configuration);
@@ -41,6 +43,11 @@ public class OpenSubtitlesPlugin : BasePlugin<PluginConfiguration>, IHasWebPages
     /// <inheritdoc />
     public override Guid Id
         => Guid.Parse("4b9ed42f-5185-48b5-9803-6ff2989014c4");
+
+    /// <summary>
+    /// Gets the plugin instance.
+    /// </summary>
+    public static OpenSubtitlesPlugin? Instance { get; private set; }
 
     /// <inheritdoc />
     public IEnumerable<PluginPageInfo> GetPages()

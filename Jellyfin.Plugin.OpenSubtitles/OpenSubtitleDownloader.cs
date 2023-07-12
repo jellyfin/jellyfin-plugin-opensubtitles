@@ -367,9 +367,9 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         if (!loginResponse.Ok)
         {
             // 400 = Using email, 401 = invalid credentials, 403 = invalid api key
-            if ((loginResponse.Code == HttpStatusCode.BadRequest && options.Username.Contains('@', StringComparison.OrdinalIgnoreCase))
+            if ((loginResponse.Code == HttpStatusCode.BadRequest && _configuration.Username.Contains('@', StringComparison.OrdinalIgnoreCase))
                 || loginResponse.Code == HttpStatusCode.Unauthorized
-                || (loginResponse.Code == HttpStatusCode.Forbidden && ApiKey == options.CustomApiKey))
+                || (loginResponse.Code == HttpStatusCode.Forbidden && ApiKey == _configuration.CustomApiKey))
             {
                 _logger.LogError("Login failed due to invalid credentials/API key, invalidating them ({Code} - {Body})", loginResponse.Code, loginResponse.Body);
                 _configuration.CredentialsInvalid = true;
