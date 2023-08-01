@@ -18,10 +18,5 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models
         /// </summary>
         [Required]
         public string Password { get; set; } = null!;
-
-        /// <summary>
-        /// Gets or sets the custom api key.
-        /// </summary>
-        public string CustomApiKey { get; set; } = null!;
     }
 }

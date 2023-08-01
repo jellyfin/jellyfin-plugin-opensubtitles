@@ -31,7 +31,6 @@ namespace Jellyfin.Plugin.OpenSubtitles
         private DateTime? _limitReset;
         private DateTime? _lastRatelimitLog;
         private IReadOnlyList<string>? _languages;
-        private string _customApiKey;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OpenSubtitleDownloader"/> class.
@@ -48,12 +47,9 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             OpenSubtitlesPlugin.Instance!.ConfigurationChanged += (_, _) =>
             {
-                _customApiKey = GetOptions().CustomApiKey;
                 // force a login next time a request is made
                 _login = null;
             };
-
-            _customApiKey = GetOptions().CustomApiKey;
         }
 
         /// <summary>
@@ -63,7 +59,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
         {
             get
             {
-                return !string.IsNullOrWhiteSpace(_customApiKey) ? _customApiKey : OpenSubtitlesPlugin.ApiKey;
+                return OpenSubtitlesPlugin.ApiKey;
             }
         }
 
@@ -367,12 +363,11 @@ namespace Jellyfin.Plugin.OpenSubtitles
 
             if (!loginResponse.Ok)
             {
-                // 400 = Using email, 401 = invalid credentials, 403 = invalid api key
+                // 400 = Using email, 401 = invalid credentials
                 if ((loginResponse.Code == HttpStatusCode.BadRequest && options.Username.Contains('@', StringComparison.OrdinalIgnoreCase))
-                    || loginResponse.Code == HttpStatusCode.Unauthorized
-                    || (loginResponse.Code == HttpStatusCode.Forbidden && ApiKey == options.CustomApiKey))
+                    || loginResponse.Code == HttpStatusCode.Unauthorized)
                 {
-                    _logger.LogError("Login failed due to invalid credentials/API key, invalidating them ({Code} - {Body})", loginResponse.Code, loginResponse.Body);
+                    _logger.LogError("Login failed due to invalid credentials, invalidating them ({Code} - {Body})", loginResponse.Code, loginResponse.Body);
                     options.CredentialsInvalid = true;
                     OpenSubtitlesPlugin.Instance!.SaveConfiguration(options);
                 }
