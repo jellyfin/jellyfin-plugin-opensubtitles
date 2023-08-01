@@ -58,7 +58,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
     {
         get
         {
-            return !string.IsNullOrWhiteSpace(_configuration?.CustomApiKey) ? _configuration.CustomApiKey : OpenSubtitlesPlugin.ApiKey;
+            return OpenSubtitlesPlugin.ApiKey;
         }
     }
 
@@ -363,12 +363,11 @@ public class OpenSubtitleDownloader : ISubtitleProvider
 
         if (!loginResponse.Ok)
         {
-            // 400 = Using email, 401 = invalid credentials, 403 = invalid api key
+            // 400 = Using email, 401 = invalid credentials
             if ((loginResponse.Code == HttpStatusCode.BadRequest && _configuration.Username.Contains('@', StringComparison.OrdinalIgnoreCase))
-                || loginResponse.Code == HttpStatusCode.Unauthorized
-                || (loginResponse.Code == HttpStatusCode.Forbidden && ApiKey == _configuration.CustomApiKey))
+                || loginResponse.Code == HttpStatusCode.Unauthorized)
             {
-                _logger.LogError("Login failed due to invalid credentials/API key, invalidating them ({Code} - {Body})", loginResponse.Code, loginResponse.Body);
+                _logger.LogError("Login failed due to invalid credentials, invalidating them ({Code} - {Body})", loginResponse.Code, loginResponse.Body);
                 _configuration.CredentialsInvalid = true;
                 OpenSubtitlesPlugin.Instance!.SaveConfiguration(_configuration);
             }

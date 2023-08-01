@@ -38,8 +38,11 @@ public class OpenSubtitlesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult> ValidateLoginInfo([FromBody] LoginInfoInput body)
     {
-        var key = !string.IsNullOrWhiteSpace(body.CustomApiKey) ? body.CustomApiKey : OpenSubtitlesPlugin.ApiKey;
-        var response = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(body.Username, body.Password, key, CancellationToken.None).ConfigureAwait(false);
+        var response = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(
+            body.Username,
+            body.Password,
+            OpenSubtitlesPlugin.ApiKey,
+            CancellationToken.None).ConfigureAwait(false);
 
         if (!response.Ok)
         {
@@ -59,7 +62,10 @@ public class OpenSubtitlesController : ControllerBase
 
         if (response.Data is not null)
         {
-            await OpenSubtitlesHandler.OpenSubtitles.LogOutAsync(response.Data, key, CancellationToken.None).ConfigureAwait(false);
+            await OpenSubtitlesHandler.OpenSubtitles.LogOutAsync(
+                response.Data,
+                OpenSubtitlesPlugin.ApiKey,
+                CancellationToken.None).ConfigureAwait(false);
         }
 
         return Ok(new { Downloads = response.Data?.User?.AllowedDownloads ?? 0 });
