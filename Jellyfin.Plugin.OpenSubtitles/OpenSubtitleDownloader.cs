@@ -212,10 +212,15 @@ public class OpenSubtitleDownloader : ISubtitleProvider
                 Format = "srt",
                 ProviderName = Name,
                 ThreeLetterISOLanguageName = request.Language,
-                Id = $"srt-{request.Language}-{i.Attributes?.Files[0].FileId}",
+                Id = $"srt-{request.Language}-{i.Attributes?.Files[0].FileId}{((i.Attributes?.HearingImpaired ?? false) ? "-sdh" : string.Empty)}{((i.Attributes?.ForeignPartsOnly ?? false) ? "-forced" : string.Empty)}",
                 Name = i.Attributes?.Release,
                 DateCreated = i.Attributes?.UploadDate,
-                IsHashMatch = i.Attributes?.MovieHashMatch
+                IsHashMatch = i.Attributes?.MovieHashMatch,
+                HearingImpaired = i.Attributes?.HearingImpaired,
+                MachineTranslated = i.Attributes?.MachineTranslated,
+                AiTranslated = i.Attributes?.AiTranslated,
+                FrameRate = i.Attributes?.Fps,
+                Forced = i.Attributes?.ForeignPartsOnly
             });
     }
 
@@ -255,14 +260,11 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         }
 
         var idParts = id.Split('-');
-        if (idParts.Length != 3)
-        {
-            throw new FormatException(string.Format(CultureInfo.InvariantCulture, "Invalid subtitle id format: {0}", id));
-        }
-
         var format = idParts[0];
         var language = idParts[1];
         var fileId = int.Parse(idParts[2], CultureInfo.InvariantCulture);
+        var isHearingImpaired = id.Contains("-sdh", StringComparison.OrdinalIgnoreCase);
+        var isForced = id.Contains("-forced", StringComparison.OrdinalIgnoreCase);
 
         var info = await OpenSubtitlesHandler.OpenSubtitles
             .GetSubtitleLinkAsync(fileId, format, _login, ApiKey, cancellationToken)
@@ -337,7 +339,14 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             throw new HttpRequestException(msg);
         }
 
-        return new SubtitleResponse { Format = format, Language = language, Stream = new MemoryStream(Encoding.UTF8.GetBytes(res.Body)) };
+        return new SubtitleResponse
+        {
+            Format = format,
+            Language = language,
+            Stream = new MemoryStream(Encoding.UTF8.GetBytes(res.Body)),
+            IsForced = isForced,
+            IsHearingImpaired = isHearingImpaired
+        };
     }
 
     private async Task Login(CancellationToken cancellationToken)
