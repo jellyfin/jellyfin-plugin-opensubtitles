@@ -1,16 +1,15 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models.Responses
+namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models.Responses;
+
+/// <summary>
+/// The encapsulated user info.
+/// </summary>
+public class EncapsulatedUserInfo
 {
     /// <summary>
-    /// The encapsulated user info.
+    /// Gets or sets the user info data.
     /// </summary>
-    public class EncapsulatedUserInfo
-    {
-        /// <summary>
-        /// Gets or sets the user info data.
-        /// </summary>
-        [JsonPropertyName("data")]
-        public UserInfo? Data { get; set; }
-    }
+    [JsonPropertyName("data")]
+    public UserInfo? Data { get; set; }
 }

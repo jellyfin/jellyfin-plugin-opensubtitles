@@ -26,7 +26,7 @@ This is a plugin allows you to download subtitles from [Open Subtitles](https://
 
 ## Build
 
-1. To build this plugin you will need [.Net 6.x](https://dotnet.microsoft.com/download/dotnet/6.0).
+1. To build this plugin you will need [.Net 7.x](https://dotnet.microsoft.com/download/dotnet/7.0).
 
 2. Build plugin with following command
   ```

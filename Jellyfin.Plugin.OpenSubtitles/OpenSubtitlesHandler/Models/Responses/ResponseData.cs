@@ -1,16 +1,15 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models.Responses
+namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models.Responses;
+
+/// <summary>
+/// The response data.
+/// </summary>
+public class ResponseData
 {
     /// <summary>
-    /// The response data.
+    /// Gets or sets the response attributes.
     /// </summary>
-    public class ResponseData
-    {
-        /// <summary>
-        /// Gets or sets the response attributes.
-        /// </summary>
-        [JsonPropertyName("attributes")]
-        public Attributes? Attributes { get; set; }
-    }
+    [JsonPropertyName("attributes")]
+    public Attributes? Attributes { get; set; }
 }
