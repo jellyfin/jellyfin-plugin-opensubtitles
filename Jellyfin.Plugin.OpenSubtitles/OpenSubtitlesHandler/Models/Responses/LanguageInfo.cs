@@ -1,16 +1,15 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models.Responses
+namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models.Responses;
+
+/// <summary>
+/// The language info.
+/// </summary>
+public class LanguageInfo
 {
     /// <summary>
-    /// The language info.
+    /// Gets or sets the language code.
     /// </summary>
-    public class LanguageInfo
-    {
-        /// <summary>
-        /// Gets or sets the language code.
-        /// </summary>
-        [JsonPropertyName("language_code")]
-        public string? Code { get; set; }
-    }
+    [JsonPropertyName("language_code")]
+    public string? Code { get; set; }
 }

@@ -1,17 +1,16 @@
 ﻿using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models.Responses
+namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models.Responses;
+
+/// <summary>
+/// The encapsulated language list.
+/// </summary>
+public class EncapsulatedLanguageList
 {
     /// <summary>
-    /// The encapsulated language list.
+    /// Gets or sets the language list.
     /// </summary>
-    public class EncapsulatedLanguageList
-    {
-        /// <summary>
-        /// Gets or sets the language list.
-        /// </summary>
-        [JsonPropertyName("data")]
-        public IReadOnlyList<LanguageInfo>? Data { get; set; }
-    }
+    [JsonPropertyName("data")]
+    public IReadOnlyList<LanguageInfo>? Data { get; set; }
 }
