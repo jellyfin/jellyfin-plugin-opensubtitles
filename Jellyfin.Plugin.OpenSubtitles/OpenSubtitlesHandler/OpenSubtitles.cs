@@ -39,10 +39,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
         /// <returns>logout status.</returns>
         public static async Task<bool> LogOutAsync(LoginInfo user, string apiKey, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(user.Token))
-            {
-                throw new ArgumentNullException(nameof(user.Token), "Token is null or empty");
-            }
+            ArgumentException.ThrowIfNullOrEmpty(user.Token);
 
             var headers = new Dictionary<string, string> { { "Authorization", user.Token } };
 
@@ -60,10 +57,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
         /// <returns>The encapsulated user info.</returns>
         public static async Task<ApiResponse<EncapsulatedUserInfo>> GetUserInfo(LoginInfo user, string apiKey, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(user.Token))
-            {
-                throw new ArgumentNullException(nameof(user.Token), "Token is null or empty");
-            }
+            ArgumentException.ThrowIfNullOrEmpty(user.Token);
 
             var headers = new Dictionary<string, string> { { "Authorization", user.Token } };
 
@@ -82,10 +76,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
         /// <returns>The subtitle download info.</returns>
         public static async Task<ApiResponse<SubtitleDownloadInfo>> GetSubtitleLinkAsync(int file, LoginInfo user, string apiKey, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(user.Token))
-            {
-                throw new ArgumentNullException(nameof(user.Token), "Token is null or empty");
-            }
+            ArgumentException.ThrowIfNullOrEmpty(user.Token);
 
             var headers = new Dictionary<string, string> { { "Authorization", user.Token } };
 
