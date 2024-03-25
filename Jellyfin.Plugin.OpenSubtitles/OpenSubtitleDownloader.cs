@@ -82,10 +82,7 @@ namespace Jellyfin.Plugin.OpenSubtitles
         /// <inheritdoc />
         public async Task<IEnumerable<RemoteSubtitleInfo>> Search(SubtitleSearchRequest request, CancellationToken cancellationToken)
         {
-            if (request == null)
-            {
-                throw new ArgumentNullException(nameof(request));
-            }
+            ArgumentNullException.ThrowIfNull(request);
 
             await Login(cancellationToken).ConfigureAwait(false);
 

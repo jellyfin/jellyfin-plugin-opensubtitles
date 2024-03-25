@@ -53,11 +53,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler
                 throw new ArgumentException("Provided API key is blank", nameof(apiKey));
             }
 
-            if (!headers.ContainsKey("Api-Key"))
-            {
-                headers.Add("Api-Key", apiKey);
-            }
-
+            headers.TryAdd("Api-Key", apiKey);
             if (_hRemaining == 0)
             {
                 await Task.Delay(1000 * _hReset, cancellationToken).ConfigureAwait(false);
