@@ -15,7 +15,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.API
     /// </summary>
     [ApiController]
     [Produces(MediaTypeNames.Application.Json)]
-    [Authorize(Policy = "DefaultAuthorization")]
+    [Authorize(Policy = "SubtitleManagement")]
     public class OpenSubtitlesController : ControllerBase
     {
         /// <summary>
