@@ -1,16 +1,15 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models
+namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models;
+
+/// <summary>
+/// The error response.
+/// </summary>
+public class ErrorResponse
 {
     /// <summary>
-    /// The error response.
+    /// Gets or sets the error message.
     /// </summary>
-    public class ErrorResponse
-    {
-        /// <summary>
-        /// Gets or sets the error message.
-        /// </summary>
-        [JsonPropertyName("message")]
-        public string? Message { get; set; }
-    }
+    [JsonPropertyName("message")]
+    public string? Message { get; set; }
 }
