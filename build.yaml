@@ -6,7 +6,7 @@ targetAbi: "10.9.0.0"
 framework: "net8.0"
 owner: "jellyfin"
 overview: "Download subtitles for your media"
-description: "Download subtitles from the internet to use with your media files."
+description: "Download subtitles from the internet to use with your media files. (Requires configuration)"
 category: "Metadata"
 artifacts:
   - "Jellyfin.Plugin.OpenSubtitles.dll"
