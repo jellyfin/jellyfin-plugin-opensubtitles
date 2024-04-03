@@ -87,11 +87,10 @@ public class OpenSubtitlesRequestHelper
             Content = content,
             Headers =
             {
-                Accept = { new MediaTypeWithQualityHeaderValue("*/*") }
+                UserAgent = { new ProductInfoHeaderValue("Jellyfin-Plugin-OpenSubtitles", _version) },
+                Accept = { new MediaTypeWithQualityHeaderValue("*/*") },
             }
         };
-
-        request.Headers.Add("User-Agent", $"Jellyfin-Plugin-OpenSubtitles v{_version}");
 
         foreach (var (key, value) in headers)
         {
