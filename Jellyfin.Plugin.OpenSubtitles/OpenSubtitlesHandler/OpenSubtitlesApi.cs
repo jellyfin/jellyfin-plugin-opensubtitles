@@ -12,7 +12,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler;
 /// <summary>
 /// The open subtitles helper class.
 /// </summary>
-public static class OpenSubtitles
+public static class OpenSubtitlesApi
 {
     /// <summary>
     /// Login.

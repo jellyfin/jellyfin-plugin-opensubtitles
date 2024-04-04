@@ -162,7 +162,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
 
         _logger.LogDebug("Search query: {Query}", options);
 
-        var searchResponse = await OpenSubtitlesHandler.OpenSubtitles.SearchSubtitlesAsync(options, cancellationToken).ConfigureAwait(false);
+        var searchResponse = await OpenSubtitlesApi.SearchSubtitlesAsync(options, cancellationToken).ConfigureAwait(false);
 
         if (!searchResponse.Ok)
         {
@@ -250,7 +250,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         var language = idParts[1];
         var fileId = int.Parse(idParts[2], CultureInfo.InvariantCulture);
 
-        var info = await OpenSubtitlesHandler.OpenSubtitles
+        var info = await OpenSubtitlesApi
             .GetSubtitleLinkAsync(fileId, format, _login, cancellationToken)
             .ConfigureAwait(false);
 
@@ -310,7 +310,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             throw new HttpRequestException(msg);
         }
 
-        var res = await OpenSubtitlesHandler.OpenSubtitles.DownloadSubtitleAsync(info.Data.Link, cancellationToken).ConfigureAwait(false);
+        var res = await OpenSubtitlesApi.DownloadSubtitleAsync(info.Data.Link, cancellationToken).ConfigureAwait(false);
 
         if (res.Code != HttpStatusCode.OK || string.IsNullOrWhiteSpace(res.Body))
         {
@@ -344,7 +344,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             return;
         }
 
-        var loginResponse = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(
+        var loginResponse = await OpenSubtitlesApi.LogInAsync(
             _configuration.Username,
             _configuration.Password,
             cancellationToken).ConfigureAwait(false);
@@ -381,7 +381,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             return;
         }
 
-        var infoResponse = await OpenSubtitlesHandler.OpenSubtitles.GetUserInfo(_login, cancellationToken).ConfigureAwait(false);
+        var infoResponse = await OpenSubtitlesApi.GetUserInfo(_login, cancellationToken).ConfigureAwait(false);
         if (infoResponse.Ok)
         {
             _login.User = infoResponse.Data?.Data;
@@ -402,7 +402,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
 
         if (_languages is null || _languages.Count == 0)
         {
-            var res = await OpenSubtitlesHandler.OpenSubtitles.GetLanguageList(cancellationToken).ConfigureAwait(false);
+            var res = await OpenSubtitlesApi.GetLanguageList(cancellationToken).ConfigureAwait(false);
 
             if (!res.Ok || res.Data?.Data is null)
             {
