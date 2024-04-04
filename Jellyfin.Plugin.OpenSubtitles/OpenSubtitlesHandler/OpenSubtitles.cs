@@ -19,13 +19,12 @@ public static class OpenSubtitles
     /// </summary>
     /// <param name="username">The username.</param>
     /// <param name="password">The password.</param>
-    /// <param name="apiKey">The api key.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The api response.</returns>
-    public static async Task<ApiResponse<LoginInfo>> LogInAsync(string username, string password, string apiKey, CancellationToken cancellationToken)
+    public static async Task<ApiResponse<LoginInfo>> LogInAsync(string username, string password, CancellationToken cancellationToken)
     {
         var body = new { username, password };
-        var response = await RequestHandler.SendRequestAsync("/login", HttpMethod.Post, body, null, apiKey, 1, cancellationToken).ConfigureAwait(false);
+        var response = await RequestHandler.SendRequestAsync("/login", HttpMethod.Post, body, null, 1, cancellationToken).ConfigureAwait(false);
 
         return new ApiResponse<LoginInfo>(response);
     }
@@ -34,16 +33,15 @@ public static class OpenSubtitles
     /// Logout.
     /// </summary>
     /// <param name="user">The user information.</param>
-    /// <param name="apiKey">The api key.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>logout status.</returns>
-    public static async Task<bool> LogOutAsync(LoginInfo user, string apiKey, CancellationToken cancellationToken)
+    public static async Task<bool> LogOutAsync(LoginInfo user, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrEmpty(user.Token);
 
         var headers = new Dictionary<string, string> { { "Authorization", user.Token } };
 
-        var response = await RequestHandler.SendRequestAsync("/logout", HttpMethod.Delete, null, headers, apiKey, 1, cancellationToken).ConfigureAwait(false);
+        var response = await RequestHandler.SendRequestAsync("/logout", HttpMethod.Delete, null, headers, 1, cancellationToken).ConfigureAwait(false);
 
         return new ApiResponse<object>(response).Ok;
     }
@@ -52,16 +50,15 @@ public static class OpenSubtitles
     /// Get user info.
     /// </summary>
     /// <param name="user">The user information.</param>
-    /// <param name="apiKey">The api key.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The encapsulated user info.</returns>
-    public static async Task<ApiResponse<EncapsulatedUserInfo>> GetUserInfo(LoginInfo user, string apiKey, CancellationToken cancellationToken)
+    public static async Task<ApiResponse<EncapsulatedUserInfo>> GetUserInfo(LoginInfo user, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrEmpty(user.Token);
 
         var headers = new Dictionary<string, string> { { "Authorization", user.Token } };
 
-        var response = await RequestHandler.SendRequestAsync("/infos/user", HttpMethod.Get, null, headers, apiKey, 1, cancellationToken).ConfigureAwait(false);
+        var response = await RequestHandler.SendRequestAsync("/infos/user", HttpMethod.Get, null, headers, 1, cancellationToken).ConfigureAwait(false);
 
         return new ApiResponse<EncapsulatedUserInfo>(response);
     }
@@ -72,14 +69,12 @@ public static class OpenSubtitles
     /// <param name="file">The subtitle file.</param>
     /// <param name="format">The subtitle format.</param>
     /// <param name="user">The user information.</param>
-    /// <param name="apiKey">The api key.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The subtitle download info.</returns>
     public static async Task<ApiResponse<SubtitleDownloadInfo>> GetSubtitleLinkAsync(
         int file,
         string format,
         LoginInfo user,
-        string apiKey,
         CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrEmpty(user.Token);
@@ -87,7 +82,7 @@ public static class OpenSubtitles
         var headers = new Dictionary<string, string> { { "Authorization", user.Token } };
 
         var body = new { file_id = file, sub_format = format };
-        var response = await RequestHandler.SendRequestAsync("/download", HttpMethod.Post, body, headers, apiKey, 1, cancellationToken).ConfigureAwait(false);
+        var response = await RequestHandler.SendRequestAsync("/download", HttpMethod.Post, body, headers, 1, cancellationToken).ConfigureAwait(false);
 
         return new ApiResponse<SubtitleDownloadInfo>(response, $"file id: {file}");
     }
@@ -118,10 +113,9 @@ public static class OpenSubtitles
     /// Search for subtitle.
     /// </summary>
     /// <param name="options">The search options.</param>
-    /// <param name="apiKey">The api key.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The list of response data.</returns>
-    public static async Task<ApiResponse<IReadOnlyList<ResponseData>>> SearchSubtitlesAsync(Dictionary<string, string> options, string apiKey, CancellationToken cancellationToken)
+    public static async Task<ApiResponse<IReadOnlyList<ResponseData>>> SearchSubtitlesAsync(Dictionary<string, string> options, CancellationToken cancellationToken)
     {
         var opts = new Dictionary<string, string>();
         foreach (var (key, value) in options)
@@ -144,7 +138,7 @@ public static class OpenSubtitles
             }
 
             var url = RequestHandler.AddQueryString("/subtitles", opts);
-            response = await RequestHandler.SendRequestAsync(url, HttpMethod.Get, null, null, apiKey, 1, cancellationToken).ConfigureAwait(false);
+            response = await RequestHandler.SendRequestAsync(url, HttpMethod.Get, null, null, 1, cancellationToken).ConfigureAwait(false);
 
             last = new ApiResponse<SearchResult>(response, $"url: {url}", $"page: {current}");
 
@@ -175,12 +169,11 @@ public static class OpenSubtitles
     /// <summary>
     /// Get language list.
     /// </summary>
-    /// <param name="apiKey">The api key.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The list of languages.</returns>
-    public static async Task<ApiResponse<EncapsulatedLanguageList>> GetLanguageList(string apiKey, CancellationToken cancellationToken)
+    public static async Task<ApiResponse<EncapsulatedLanguageList>> GetLanguageList(CancellationToken cancellationToken)
     {
-        var response = await RequestHandler.SendRequestAsync("/infos/languages", HttpMethod.Get, null, null, apiKey, 1, cancellationToken).ConfigureAwait(false);
+        var response = await RequestHandler.SendRequestAsync("/infos/languages", HttpMethod.Get, null, null, 1, cancellationToken).ConfigureAwait(false);
 
         return new ApiResponse<EncapsulatedLanguageList>(response);
     }

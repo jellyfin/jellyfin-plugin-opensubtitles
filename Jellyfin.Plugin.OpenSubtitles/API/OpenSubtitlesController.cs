@@ -41,7 +41,6 @@ public class OpenSubtitlesController : ControllerBase
         var response = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(
             body.Username,
             body.Password,
-            OpenSubtitlesPlugin.ApiKey,
             CancellationToken.None).ConfigureAwait(false);
 
         if (!response.Ok)
@@ -64,7 +63,6 @@ public class OpenSubtitlesController : ControllerBase
         {
             await OpenSubtitlesHandler.OpenSubtitles.LogOutAsync(
                 response.Data,
-                OpenSubtitlesPlugin.ApiKey,
                 CancellationToken.None).ConfigureAwait(false);
         }
 
