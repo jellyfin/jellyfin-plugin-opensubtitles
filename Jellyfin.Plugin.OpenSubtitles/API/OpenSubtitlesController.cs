@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler;
 using Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models;
+using MediaBrowser.Common.Api;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -16,7 +17,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.API;
 /// </summary>
 [ApiController]
 [Produces(MediaTypeNames.Application.Json)]
-[Authorize]
+[Authorize(Policy = Policies.SubtitleManagement)]
 public class OpenSubtitlesController : ControllerBase
 {
     /// <summary>
