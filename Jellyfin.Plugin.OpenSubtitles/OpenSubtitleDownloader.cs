@@ -51,17 +51,6 @@ public class OpenSubtitleDownloader : ISubtitleProvider
     /// </summary>
     public static OpenSubtitleDownloader? Instance { get; private set; }
 
-    /// <summary>
-    /// Gets the API key that will be used for requests.
-    /// </summary>
-    public string ApiKey
-    {
-        get
-        {
-            return !string.IsNullOrWhiteSpace(_configuration?.CustomApiKey) ? _configuration.CustomApiKey : OpenSubtitlesPlugin.ApiKey;
-        }
-    }
-
     /// <inheritdoc />
     public string Name
         => "Open Subtitles";
@@ -173,7 +162,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
 
         _logger.LogDebug("Search query: {Query}", options);
 
-        var searchResponse = await OpenSubtitlesHandler.OpenSubtitles.SearchSubtitlesAsync(options, ApiKey, cancellationToken).ConfigureAwait(false);
+        var searchResponse = await OpenSubtitlesApi.SearchSubtitlesAsync(options, cancellationToken).ConfigureAwait(false);
 
         if (!searchResponse.Ok)
         {
@@ -183,7 +172,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
 
         bool MediaFilter(ResponseData x) =>
             x.Attributes?.FeatureDetails?.FeatureType == (request.ContentType == VideoContentType.Episode ? "Episode" : "Movie")
-            && x.Attributes?.Files?.Count > 0 && x.Attributes.Files[0].FileId != null
+            && x.Attributes?.Files?.Count > 0 && x.Attributes.Files[0].FileId is not null
             && (request.ContentType == VideoContentType.Episode
                 ? x.Attributes.FeatureDetails.SeasonNumber == request.ParentIndexNumber
                     && x.Attributes.FeatureDetails.EpisodeNumber == request.IndexNumber
@@ -261,8 +250,8 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         var language = idParts[1];
         var fileId = int.Parse(idParts[2], CultureInfo.InvariantCulture);
 
-        var info = await OpenSubtitlesHandler.OpenSubtitles
-            .GetSubtitleLinkAsync(fileId, format, _login, ApiKey, cancellationToken)
+        var info = await OpenSubtitlesApi
+            .GetSubtitleLinkAsync(fileId, format, _login, cancellationToken)
             .ConfigureAwait(false);
 
         if (info.Data?.ResetTime is not null)
@@ -321,7 +310,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             throw new HttpRequestException(msg);
         }
 
-        var res = await OpenSubtitlesHandler.OpenSubtitles.DownloadSubtitleAsync(info.Data.Link, cancellationToken).ConfigureAwait(false);
+        var res = await OpenSubtitlesApi.DownloadSubtitleAsync(info.Data.Link, cancellationToken).ConfigureAwait(false);
 
         if (res.Code != HttpStatusCode.OK || string.IsNullOrWhiteSpace(res.Body))
         {
@@ -355,20 +344,18 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             return;
         }
 
-        var loginResponse = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(
+        var loginResponse = await OpenSubtitlesApi.LogInAsync(
             _configuration.Username,
             _configuration.Password,
-            ApiKey,
             cancellationToken).ConfigureAwait(false);
 
         if (!loginResponse.Ok)
         {
-            // 400 = Using email, 401 = invalid credentials, 403 = invalid api key
+            // 400 = Using email, 401 = invalid credentials
             if ((loginResponse.Code == HttpStatusCode.BadRequest && _configuration.Username.Contains('@', StringComparison.OrdinalIgnoreCase))
-                || loginResponse.Code == HttpStatusCode.Unauthorized
-                || (loginResponse.Code == HttpStatusCode.Forbidden && ApiKey == _configuration.CustomApiKey))
+                || loginResponse.Code == HttpStatusCode.Unauthorized)
             {
-                _logger.LogError("Login failed due to invalid credentials/API key, invalidating them ({Code} - {Body})", loginResponse.Code, loginResponse.Body);
+                _logger.LogError("Login failed due to invalid credentials, invalidating them ({Code} - {Body})", loginResponse.Code, loginResponse.Body);
                 _configuration.CredentialsInvalid = true;
                 OpenSubtitlesPlugin.Instance!.SaveConfiguration(_configuration);
             }
@@ -394,7 +381,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             return;
         }
 
-        var infoResponse = await OpenSubtitlesHandler.OpenSubtitles.GetUserInfo(_login, ApiKey, cancellationToken).ConfigureAwait(false);
+        var infoResponse = await OpenSubtitlesApi.GetUserInfo(_login, cancellationToken).ConfigureAwait(false);
         if (infoResponse.Ok)
         {
             _login.User = infoResponse.Data?.Data;
@@ -415,7 +402,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
 
         if (_languages is null || _languages.Count == 0)
         {
-            var res = await OpenSubtitlesHandler.OpenSubtitles.GetLanguageList(ApiKey, cancellationToken).ConfigureAwait(false);
+            var res = await OpenSubtitlesApi.GetLanguageList(cancellationToken).ConfigureAwait(false);
 
             if (!res.Ok || res.Data?.Data is null)
             {
