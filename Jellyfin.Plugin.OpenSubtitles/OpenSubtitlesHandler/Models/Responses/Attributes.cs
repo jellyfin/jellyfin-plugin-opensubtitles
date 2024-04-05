@@ -22,6 +22,12 @@ public class Attributes
     public float Ratings { get; set; }
 
     /// <summary>
+    /// Gets or sets the subtitle framerate.
+    /// </summary>
+    [JsonPropertyName("fps")]
+    public float Fps { get; set; }
+
+    /// <summary>
     /// Gets or sets a value indicating whether this subtitle was from a trusted uploader.
     /// </summary>
     [JsonPropertyName("from_trusted")]
@@ -68,4 +74,28 @@ public class Attributes
     /// </summary>
     [JsonPropertyName("moviehash_match")]
     public bool? MovieHashMatch { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the subtitle is for hearing impaired.
+    /// </summary>
+    [JsonPropertyName("hearing_impaired")]
+    public bool? HearingImpaired { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the subtitle is ai translated.
+    /// </summary>
+    [JsonPropertyName("ai_translated")]
+    public bool? AiTranslated { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the subtitle is machine translated.
+    /// </summary>
+    [JsonPropertyName("machine_translated")]
+    public bool? MachineTranslated { get; set; }
+
+     /// <summary>
+    /// Gets or sets a value indicating whether the subtitle is forced.
+    /// </summary>
+    [JsonPropertyName("foreign_parts_only")]
+    public bool? ForeignPartsOnly { get; set; }
 }
