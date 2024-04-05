@@ -13,7 +13,6 @@ export default function (view, params) {
         ApiClient.getPluginConfiguration(OpenSubtitlesConfig.pluginUniqueId).then(function (config) {
             page.querySelector('#username').value = config.Username || '';
             page.querySelector('#password').value = config.Password || '';
-            page.querySelector('#apikey').value = config.CustomApiKey || '';
             if (config.CredentialsInvalid) {
                 credentialsWarning.style.display = null;
             }
@@ -28,7 +27,6 @@ export default function (view, params) {
         ApiClient.getPluginConfiguration(OpenSubtitlesConfig.pluginUniqueId).then(function (config) {
             const username = form.querySelector('#username').value.trim();
             const password = form.querySelector('#password').value.trim();
-            const apiKey = form.querySelector('#apikey').value.trim();
 
             if (!username || !password) {
                 Dashboard.processErrorResponse({statusText: "Account info is incomplete"});
@@ -37,8 +35,8 @@ export default function (view, params) {
 
             const el = form.querySelector('#ossresponse');
             const saveButton = form.querySelector('#save-button');
-            
-            const data = JSON.stringify({ Username: username, Password: password, CustomApiKey: apiKey });
+
+            const data = JSON.stringify({ Username: username, Password: password });
             const url = ApiClient.getUrl('Jellyfin.Plugin.OpenSubtitles/ValidateLoginInfo');
 
             const handler = response => response.json().then(res => {
@@ -48,7 +46,6 @@ export default function (view, params) {
 
                     config.Username = username;
                     config.Password = password;
-                    config.CustomApiKey = apiKey;
                     config.CredentialsInvalid = false;
 
                     ApiClient.updatePluginConfiguration(OpenSubtitlesConfig.pluginUniqueId, config).then(function (result) {

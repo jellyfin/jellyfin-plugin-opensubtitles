@@ -3,6 +3,7 @@ using System.Net.Mime;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler;
 using Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -38,8 +39,10 @@ public class OpenSubtitlesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult> ValidateLoginInfo([FromBody] LoginInfoInput body)
     {
-        var key = !string.IsNullOrWhiteSpace(body.CustomApiKey) ? body.CustomApiKey : OpenSubtitlesPlugin.ApiKey;
-        var response = await OpenSubtitlesHandler.OpenSubtitles.LogInAsync(body.Username, body.Password, key, CancellationToken.None).ConfigureAwait(false);
+        var response = await OpenSubtitlesApi.LogInAsync(
+            body.Username,
+            body.Password,
+            CancellationToken.None).ConfigureAwait(false);
 
         if (!response.Ok)
         {
@@ -59,7 +62,7 @@ public class OpenSubtitlesController : ControllerBase
 
         if (response.Data is not null)
         {
-            await OpenSubtitlesHandler.OpenSubtitles.LogOutAsync(response.Data, key, CancellationToken.None).ConfigureAwait(false);
+            await OpenSubtitlesApi.LogOutAsync(response.Data, CancellationToken.None).ConfigureAwait(false);
         }
 
         return Ok(new { Downloads = response.Data?.User?.AllowedDownloads ?? 0 });
