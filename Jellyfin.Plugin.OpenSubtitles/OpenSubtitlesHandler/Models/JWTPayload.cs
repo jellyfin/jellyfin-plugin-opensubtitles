@@ -1,16 +1,15 @@
 using System.Text.Json.Serialization;
 
-namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models
+namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models;
+
+/// <summary>
+/// The jwt payload.
+/// </summary>
+public class JWTPayload
 {
     /// <summary>
-    /// The jwt payload.
+    /// Gets or sets the expiration timestamp.
     /// </summary>
-    public class JWTPayload
-    {
-        /// <summary>
-        /// Gets or sets the expiration timestamp.
-        /// </summary>
-        [JsonPropertyName("exp")]
-        public long Exp { get; set; }
-    }
+    [JsonPropertyName("exp")]
+    public long Exp { get; set; }
 }
