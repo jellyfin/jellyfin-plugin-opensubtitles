@@ -1,7 +1,7 @@
 name: "Open Subtitles"
 guid: "4b9ed42f-5185-48b5-9803-6ff2989014c4"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-opensubtitles.png"
-version: 19
+version: 20
 targetAbi: "10.9.0.0"
 framework: "net8.0"
 owner: "jellyfin"
@@ -10,13 +10,8 @@ description: "Download subtitles from the internet to use with your media files.
 category: "Metadata"
 artifacts:
   - "Jellyfin.Plugin.OpenSubtitles.dll"
-changelog: |2-
-  ### New features and improvements ###
-  - Add automatic invalidation of credentials (#128) @MBR-0001
-  - Add handling for .strm files (#124) @MBR-0001
+changelog: |-
+  - 10.9 (#145) @crobibero
 
-  ### Bug Fixes ###
-  - Add automatic invalidation of credentials (#128) @MBR-0001
-
-  ### CI & build changes ###
-  - fix: meta ci workflows (#106) @h1dden-da3m0n
+  ### Dependency updates ###
+  - chore(deps): update xunit-dotnet monorepo (#117) @renovate
