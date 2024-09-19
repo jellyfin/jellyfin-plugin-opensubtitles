@@ -102,7 +102,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             return Enumerable.Empty<RemoteSubtitleInfo>();
         }
 
-        var language = await GetLanguage(request.TwoLetterISOLanguageName, cancellationToken).ConfigureAwait(false);
+        var language = await GetLanguage(request.TwoLetterISOLanguageName, request.MediaPath, cancellationToken).ConfigureAwait(false);
 
         string? hash = null;
         if (!Path.GetExtension(request.MediaPath).Equals(".strm", StringComparison.OrdinalIgnoreCase))
@@ -303,7 +303,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         if (_login.User is not null)
         {
             _login.User.RemainingDownloads = info.Data?.Remaining;
-            _logger.LogInformation("Remaining downloads: {RemainingDownloads}", _login.User.RemainingDownloads);
+            _logger.LogInformation("Remaining subtitle downloads: {RemainingDownloads}", _login.User.RemainingDownloads);
         }
 
         if (string.IsNullOrWhiteSpace(info.Data?.Link))
@@ -403,7 +403,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         }
     }
 
-    private async Task<string> GetLanguage(string language, CancellationToken cancellationToken)
+    private async Task<string> GetLanguage(string language, string mediaPath, CancellationToken cancellationToken)
     {
         if (language == "zh")
         {
@@ -434,10 +434,10 @@ public class OpenSubtitleDownloader : ISubtitleProvider
 
         if (language.Contains('-', StringComparison.OrdinalIgnoreCase))
         {
-            return await GetLanguage(language.Split('-')[0], cancellationToken).ConfigureAwait(false);
+            return await GetLanguage(language.Split('-')[0], mediaPath, cancellationToken).ConfigureAwait(false);
         }
 
-        throw new NotSupportedException(string.Format(CultureInfo.InvariantCulture, "Language '{0}' is not supported", language));
+        throw new NotSupportedException(string.Format(CultureInfo.InvariantCulture, "Language '{0}' is not supported ({1})", language, mediaPath));
     }
 
     internal void ConfigurationChanged(PluginConfiguration e)
