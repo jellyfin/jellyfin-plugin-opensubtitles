@@ -30,7 +30,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
     private LoginInfo? _login;
     private DateTime? _limitReset;
     private DateTime? _lastRatelimitLog;
-    private IReadOnlyList<string>? _languages;
+    private List<string>? _languages;
     private PluginConfiguration? _configuration;
 
     /// <summary>

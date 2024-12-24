@@ -104,7 +104,7 @@ public class OpenSubtitlesRequestHelper
             }
         }
 
-        var result = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        using var result = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
         var resHeaders = result.Headers.ToDictionary(x => x.Key.ToLowerInvariant(), x => x.Value.First());
         var resBody = await result.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
