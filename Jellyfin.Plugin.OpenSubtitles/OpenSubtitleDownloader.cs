@@ -321,11 +321,18 @@ public class OpenSubtitleDownloader : ISubtitleProvider
 
         if (res.Code != HttpStatusCode.OK || string.IsNullOrWhiteSpace(res.Body))
         {
+            var additionalMsg = string.Empty;
+            if (res.Code == HttpStatusCode.OK && string.IsNullOrWhiteSpace(res.Body))
+            {
+                additionalMsg = " - this is most likely a broken subtitle, report at opensubtitles.com/contact and make sure to include the id";
+            }
+
             var msg = string.Format(
                 CultureInfo.InvariantCulture,
-                "Subtitle with Id {0} could not be downloaded: {1}",
+                "Subtitle with Id {0} could not be downloaded: {1}{2}",
                 fileId,
-                res.Code);
+                res.Code,
+                additionalMsg);
 
             throw new HttpRequestException(msg);
         }
