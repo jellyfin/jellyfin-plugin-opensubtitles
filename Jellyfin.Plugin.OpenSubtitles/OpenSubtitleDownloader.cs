@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -27,11 +28,11 @@ namespace Jellyfin.Plugin.OpenSubtitles;
 public class OpenSubtitleDownloader : ISubtitleProvider
 {
     private readonly ILogger<OpenSubtitleDownloader> _logger;
+    private readonly ConcurrentBag<int> _badSubtitleIds = new ();
     private LoginInfo? _login;
     private DateTime? _limitReset;
     private DateTime? _lastRatelimitLog;
     private List<string>? _languages;
-    private List<int> _badSubtitleIds = new ();
     private PluginConfiguration? _configuration;
 
     /// <summary>
