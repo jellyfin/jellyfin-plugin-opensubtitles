@@ -42,8 +42,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
     {
         Instance = this;
         _logger = logger;
-        var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version!.ToString();
-        OpenSubtitlesRequestHelper.Instance = new OpenSubtitlesRequestHelper(httpClientFactory, version);
+        OpenSubtitlesRequestHelper.Instance = new OpenSubtitlesRequestHelper(httpClientFactory);
     }
 
     /// <summary>

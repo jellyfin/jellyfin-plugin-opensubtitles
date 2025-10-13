@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models;
+using Microsoft.Net.Http.Headers;
 
 namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler;
 
@@ -17,13 +18,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler;
 public static class RequestHandler
 {
     private const string BaseApiUrl = "https://api.opensubtitles.com/api/v1";
-
-    // header rate limits (5/1s & 240/1 min)
-    private static int _hRemaining = -1;
-    private static int _hReset = -1;
-    // 40/10s limits
-    private static DateTime _windowStart = DateTime.MinValue;
-    private static int _requestCount;
+    private const int RetryLimit = 5;
 
     /// <summary>
     /// Send the request.
@@ -45,78 +40,35 @@ public static class RequestHandler
         CancellationToken cancellationToken)
     {
         headers ??= new Dictionary<string, string>();
-
         headers.TryAdd("Api-Key", OpenSubtitlesPlugin.ApiKey);
-        if (_hRemaining == 0)
-        {
-            await Task.Delay(1000 * _hReset, cancellationToken).ConfigureAwait(false);
-            _hRemaining = -1;
-            _hReset = -1;
-        }
-
-        if (_requestCount == 40)
-        {
-            var diff = DateTime.UtcNow.Subtract(_windowStart).TotalSeconds;
-            if (diff <= 10)
-            {
-                await Task.Delay(1000 * (int)Math.Ceiling(10 - diff), cancellationToken).ConfigureAwait(false);
-                _hRemaining = -1;
-                _hReset = -1;
-            }
-        }
-
-        if (DateTime.UtcNow.Subtract(_windowStart).TotalSeconds >= 10)
-        {
-            _windowStart = DateTime.UtcNow;
-            _requestCount = 0;
-        }
 
         var response = await OpenSubtitlesRequestHelper.Instance!.SendRequestAsync(BaseApiUrl + endpoint, method, body, headers, cancellationToken).ConfigureAwait(false);
 
-        _requestCount++;
-
-        if (response.headers.TryGetValue("x-ratelimit-remaining-second", out var value))
+        if (response.statusCode == HttpStatusCode.TooManyRequests
+            && attempt < RetryLimit
+            && response.headers.TryGetValue(HeaderNames.RetryAfter, out var retryAfterStr)
+            && int.TryParse(retryAfterStr, out var retryAfter))
         {
-            _ = int.TryParse(value, out _hRemaining);
-        }
-
-        if (response.headers.TryGetValue("ratelimit-reset", out value))
-        {
-            _ = int.TryParse(value, out _hReset);
-        }
-
-        if (response.statusCode == HttpStatusCode.TooManyRequests && attempt <= 4)
-        {
-            var time = _hReset == -1 ? 5 : _hReset;
-
-            await Task.Delay(time * 1000, cancellationToken).ConfigureAwait(false);
-
+            await Task.Delay(TimeSpan.FromSeconds(retryAfter), cancellationToken).ConfigureAwait(false);
             return await SendRequestAsync(endpoint, method, body, headers, attempt + 1, cancellationToken).ConfigureAwait(false);
         }
 
-        if (response.statusCode == HttpStatusCode.BadGateway && attempt <= 3)
+        if (response.statusCode == HttpStatusCode.BadGateway && attempt < RetryLimit)
         {
-            await Task.Delay(500, cancellationToken).ConfigureAwait(false);
-
+            await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken).ConfigureAwait(false);
             return await SendRequestAsync(endpoint, method, body, headers, attempt + 1, cancellationToken).ConfigureAwait(false);
         }
 
-        if (!response.headers.TryGetValue("x-reason", out value))
+        if (!response.headers.TryGetValue("x-reason", out var responseReason))
         {
-            value = string.Empty;
-        }
-
-        if ((int)response.statusCode >= 400 && (int)response.statusCode <= 499)
-        {
-            // Wait 1s after a 4xx response
-            await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
+            responseReason = string.Empty;
         }
 
         return new HttpResponse
         {
             Body = response.body,
             Code = response.statusCode,
-            Reason = value
+            Reason = responseReason
         };
     }
 
