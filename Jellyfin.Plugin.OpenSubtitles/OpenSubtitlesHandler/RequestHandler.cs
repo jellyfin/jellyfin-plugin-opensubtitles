@@ -137,9 +137,9 @@ public static class RequestHandler
         url.Append('?');
         foreach (var (key, value) in param.OrderBy(x => x.Key))
         {
-            url.Append(HttpUtility.UrlEncode(key))
+            url.Append(HttpUtility.UrlEncode(key.ToLowerInvariant()))
                 .Append('=')
-                .Append(HttpUtility.UrlEncode(value))
+                .Append(HttpUtility.UrlEncode(value.ToLowerInvariant()))
                 .Append('&');
         }
 

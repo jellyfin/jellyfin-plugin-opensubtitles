@@ -117,12 +117,6 @@ public static class OpenSubtitlesApi
     /// <returns>The list of response data.</returns>
     public static async Task<ApiResponse<IReadOnlyList<ResponseData>>> SearchSubtitlesAsync(Dictionary<string, string> options, CancellationToken cancellationToken)
     {
-        var opts = new Dictionary<string, string>();
-        foreach (var (key, value) in options)
-        {
-            opts.Add(key.ToLowerInvariant(), value.ToLowerInvariant());
-        }
-
         var max = -1;
         var current = 1;
 
@@ -137,7 +131,7 @@ public static class OpenSubtitlesApi
                 options["page"] = current.ToString(CultureInfo.InvariantCulture);
             }
 
-            var url = RequestHandler.AddQueryString("/subtitles", opts);
+            var url = RequestHandler.AddQueryString("/subtitles", options);
             response = await RequestHandler.SendRequestAsync(url, HttpMethod.Get, null, null, 1, cancellationToken).ConfigureAwait(false);
 
             last = new ApiResponse<SearchResult>(response, $"url: {url}", $"page: {current}");

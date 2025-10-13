@@ -9,6 +9,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using MediaBrowser.Common.Net;
 
 namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler;
 
@@ -72,7 +73,7 @@ public class OpenSubtitlesRequestHelper
         Dictionary<string, string> headers,
         CancellationToken cancellationToken)
     {
-        var client = _clientFactory.CreateClient("Default");
+        var client = _clientFactory.CreateClient(NamedClient.Default);
 
         HttpContent? content = null;
         if (method != HttpMethod.Get && body is not null)
