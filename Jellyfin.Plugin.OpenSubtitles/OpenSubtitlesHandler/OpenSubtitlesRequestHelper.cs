@@ -9,6 +9,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Net.Http.Headers;
 
 namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler;
 
@@ -18,17 +19,14 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler;
 public class OpenSubtitlesRequestHelper
 {
     private readonly IHttpClientFactory _clientFactory;
-    private readonly string _version;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="OpenSubtitlesRequestHelper"/> class.
     /// </summary>
     /// <param name="factory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
-    /// <param name="version">The plugin version.</param>
-    public OpenSubtitlesRequestHelper(IHttpClientFactory factory, string version)
+    public OpenSubtitlesRequestHelper(IHttpClientFactory factory)
     {
         _clientFactory = factory;
-        _version = version;
     }
 
     /// <summary>
@@ -72,7 +70,7 @@ public class OpenSubtitlesRequestHelper
         Dictionary<string, string> headers,
         CancellationToken cancellationToken)
     {
-        var client = _clientFactory.CreateClient("Default");
+        var client = _clientFactory.CreateClient(nameof(OpenSubtitles));
 
         HttpContent? content = null;
         if (method != HttpMethod.Get && body is not null)
@@ -84,17 +82,12 @@ public class OpenSubtitlesRequestHelper
         {
             Method = method,
             RequestUri = new Uri(url),
-            Content = content,
-            Headers =
-            {
-                UserAgent = { new ProductInfoHeaderValue("Jellyfin-Plugin-OpenSubtitles", _version) },
-                Accept = { new MediaTypeWithQualityHeaderValue("*/*") },
-            }
+            Content = content
         };
 
         foreach (var (key, value) in headers)
         {
-            if (string.Equals(key, "authorization", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(key, HeaderNames.Authorization, StringComparison.OrdinalIgnoreCase))
             {
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", value);
             }
@@ -105,7 +98,7 @@ public class OpenSubtitlesRequestHelper
         }
 
         using var result = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        var resHeaders = result.Headers.ToDictionary(x => x.Key.ToLowerInvariant(), x => x.Value.First());
+        var resHeaders = result.Headers.ToDictionary(x => x.Key, x => x.Value.First(), StringComparer.OrdinalIgnoreCase);
         var resBody = await result.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
         return (resBody, resHeaders, result.StatusCode);

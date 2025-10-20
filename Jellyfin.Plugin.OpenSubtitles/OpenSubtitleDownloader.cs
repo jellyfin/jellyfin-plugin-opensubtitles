@@ -42,8 +42,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
     {
         Instance = this;
         _logger = logger;
-        var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version!.ToString();
-        OpenSubtitlesRequestHelper.Instance = new OpenSubtitlesRequestHelper(httpClientFactory, version);
+        OpenSubtitlesRequestHelper.Instance = new OpenSubtitlesRequestHelper(httpClientFactory);
     }
 
     /// <summary>
@@ -121,43 +120,44 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             }
         }
 
-        var options = new Dictionary<string, string>
+        var options = new Dictionary<string, string>();
+        if (request.IsPerfectMatch && !string.IsNullOrEmpty(hash))
         {
-            { "languages", language },
-            { "type", request.ContentType == VideoContentType.Episode ? "episode" : "movie" }
-        };
-
-        if (hash is not null)
-        {
+            options.Add("languages", language);
             options.Add("moviehash", hash);
-        }
-
-        // If we have the IMDb ID we use that, otherwise query with the details
-        if (imdbId != 0)
-        {
-            options.Add("imdb_id", imdbId.ToString(CultureInfo.InvariantCulture));
         }
         else
         {
-            options.Add("query", Path.GetFileName(request.MediaPath));
+            options.Add("languages", language);
+            options.Add("type", request.ContentType == VideoContentType.Episode ? "episode" : "movie");
 
-            if (request.ContentType == VideoContentType.Episode)
+            if (!string.IsNullOrEmpty(hash))
             {
-                if (request.ParentIndexNumber.HasValue)
-                {
-                    options.Add("season_number", request.ParentIndexNumber.Value.ToString(CultureInfo.InvariantCulture));
-                }
+                options.Add("moviehash", hash);
+            }
 
-                if (request.IndexNumber.HasValue)
+            // If we have the IMDb ID we use that, otherwise query with the details
+            if (imdbId != 0)
+            {
+                options.Add("imdb_id", imdbId.ToString(CultureInfo.InvariantCulture));
+            }
+            else
+            {
+                options.Add("query", Path.GetFileName(request.MediaPath));
+
+                if (request.ContentType == VideoContentType.Episode)
                 {
-                    options.Add("episode_number", request.IndexNumber.Value.ToString(CultureInfo.InvariantCulture));
+                    if (request.ParentIndexNumber.HasValue)
+                    {
+                        options.Add("season_number", request.ParentIndexNumber.Value.ToString(CultureInfo.InvariantCulture));
+                    }
+
+                    if (request.IndexNumber.HasValue)
+                    {
+                        options.Add("episode_number", request.IndexNumber.Value.ToString(CultureInfo.InvariantCulture));
+                    }
                 }
             }
-        }
-
-        if (request.IsPerfectMatch && hash is not null)
-        {
-            options.Add("moviehash_match", "only");
         }
 
         _logger.LogDebug("Search query: {Query}", options);
