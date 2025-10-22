@@ -11,7 +11,7 @@ using Microsoft.Net.Http.Headers;
 
 namespace Jellyfin.Plugin.OpenSubtitles;
 
-internal sealed class ClientSideRateLimitedHandler : DelegatingHandler, IAsyncDisposable
+internal sealed class ClientSideRateLimitedHandler : DelegatingHandler
 {
     private readonly ILogger<ClientSideRateLimitedHandler> _logger;
 
@@ -50,23 +50,5 @@ internal sealed class ClientSideRateLimitedHandler : DelegatingHandler, IAsyncDi
         }
 
         return response;
-    }
-
-    async ValueTask IAsyncDisposable.DisposeAsync()
-    {
-        await _rateLimiter.DisposeAsync().ConfigureAwait(false);
-
-        Dispose(disposing: false);
-        GC.SuppressFinalize(this);
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        base.Dispose(disposing);
-
-        if (disposing)
-        {
-            _rateLimiter.Dispose();
-        }
     }
 }
