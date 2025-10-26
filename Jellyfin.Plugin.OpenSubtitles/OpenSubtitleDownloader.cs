@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -27,6 +28,7 @@ namespace Jellyfin.Plugin.OpenSubtitles;
 public class OpenSubtitleDownloader : ISubtitleProvider
 {
     private readonly ILogger<OpenSubtitleDownloader> _logger;
+    private readonly ConcurrentBag<int> _badSubtitleIds = new ();
     private LoginInfo? _login;
     private DateTime? _limitReset;
     private DateTime? _lastRatelimitLog;
@@ -108,9 +110,9 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         {
             try
             {
-                #pragma warning disable CA2007
+#pragma warning disable CA2007
                 await using var fileStream = File.OpenRead(request.MediaPath);
-                #pragma warning restore CA2007
+#pragma warning restore CA2007
 
                 hash = OpenSubtitlesRequestHelper.ComputeHash(fileStream);
             }
@@ -170,44 +172,66 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             return Enumerable.Empty<RemoteSubtitleInfo>();
         }
 
-        bool MediaFilter(ResponseData x) =>
-            x.Attributes?.FeatureDetails?.FeatureType == (request.ContentType == VideoContentType.Episode ? "Episode" : "Movie")
-            && x.Attributes?.Files?.Count > 0 && x.Attributes.Files[0].FileId is not null
-            && (request.ContentType == VideoContentType.Episode
-                ? x.Attributes.FeatureDetails.SeasonNumber == request.ParentIndexNumber
-                    && x.Attributes.FeatureDetails.EpisodeNumber == request.IndexNumber
-                : x.Attributes?.FeatureDetails?.ImdbId == imdbId);
-
         if (searchResponse.Data is null)
         {
             return Enumerable.Empty<RemoteSubtitleInfo>();
         }
 
+        bool BadSubtitleFilter(ResponseData x) =>
+            x.Attributes?.Files?.Count > 0 &&
+            x.Attributes.Files[0].FileId.HasValue
+            && (!request.IsAutomated || !_badSubtitleIds.Contains(x.Attributes.Files[0].FileId!.Value));
+
+        bool MediaFilter(ResponseData x) =>
+            x.Attributes!.FeatureDetails?.FeatureType == (request.ContentType == VideoContentType.Episode ? "Episode" : "Movie")
+            && (request.ContentType == VideoContentType.Episode
+                ? x.Attributes.FeatureDetails.SeasonNumber == request.ParentIndexNumber
+                  && x.Attributes.FeatureDetails.EpisodeNumber == request.IndexNumber
+                : x.Attributes.FeatureDetails?.ImdbId == imdbId);
+
+        bool MatchFilter(ResponseData x) => !request.IsPerfectMatch || (x.Attributes?.MovieHashMatch ?? false);
+
         return searchResponse.Data
-            .Where(x => MediaFilter(x) && (!request.IsPerfectMatch || (x.Attributes?.MovieHashMatch ?? false)))
-            .OrderByDescending(x => x.Attributes?.MovieHashMatch ?? false)
-            .ThenByDescending(x => x.Attributes?.DownloadCount)
-            .ThenByDescending(x => x.Attributes?.Ratings)
-            .ThenByDescending(x => x.Attributes?.FromTrusted)
+            .Where(x => BadSubtitleFilter(x) && MediaFilter(x) && MatchFilter(x))
+            .OrderByDescending(x => x.Attributes!.MovieHashMatch ?? false)
+            .ThenByDescending(x => x.Attributes!.DownloadCount)
+            .ThenByDescending(x => x.Attributes!.Ratings)
+            .ThenByDescending(x => x.Attributes!.FromTrusted)
             .Select(i => new RemoteSubtitleInfo
             {
-                Author = i.Attributes?.Uploader?.Name,
-                Comment = i.Attributes?.Comments,
-                CommunityRating = i.Attributes?.Ratings,
-                DownloadCount = i.Attributes?.DownloadCount,
+                Author = i.Attributes!.Uploader?.Name,
+                Comment = i.Attributes.Comments,
+                CommunityRating = i.Attributes.Ratings,
+                DownloadCount = i.Attributes.DownloadCount,
                 Format = "srt",
                 ProviderName = Name,
                 ThreeLetterISOLanguageName = request.Language,
-                Id = $"srt-{request.Language}-{i.Attributes?.Files[0].FileId}{((i.Attributes?.HearingImpaired ?? false) ? "-sdh" : string.Empty)}{((i.Attributes?.ForeignPartsOnly ?? false) ? "-forced" : string.Empty)}",
-                Name = i.Attributes?.Release,
-                DateCreated = i.Attributes?.UploadDate,
-                IsHashMatch = i.Attributes?.MovieHashMatch,
-                HearingImpaired = i.Attributes?.HearingImpaired,
-                MachineTranslated = i.Attributes?.MachineTranslated,
-                AiTranslated = i.Attributes?.AiTranslated,
-                FrameRate = i.Attributes?.Fps,
-                Forced = i.Attributes?.ForeignPartsOnly
+                Id = BuildSubtitleId(request.Language, i),
+                Name = i.Attributes.Release,
+                DateCreated = i.Attributes.UploadDate,
+                IsHashMatch = i.Attributes.MovieHashMatch,
+                HearingImpaired = i.Attributes.HearingImpaired,
+                MachineTranslated = i.Attributes.MachineTranslated,
+                AiTranslated = i.Attributes.AiTranslated,
+                FrameRate = i.Attributes.Fps,
+                Forced = i.Attributes.ForeignPartsOnly
             });
+    }
+
+    private string BuildSubtitleId(string language, ResponseData res)
+    {
+        var id = $"srt-{language}-{res.Attributes!.Files[0].FileId}";
+        if (res.Attributes.HearingImpaired ?? false)
+        {
+            id += "-sdh";
+        }
+
+        if (res.Attributes.ForeignPartsOnly ?? false)
+        {
+            id += "-forced";
+        }
+
+        return id;
     }
 
     private async Task<SubtitleResponse> GetSubtitlesInternal(string id, CancellationToken cancellationToken)
@@ -321,11 +345,22 @@ public class OpenSubtitleDownloader : ISubtitleProvider
 
         if (res.Code != HttpStatusCode.OK || string.IsNullOrWhiteSpace(res.Body))
         {
+            var additionalMsg = string.Empty;
+            if (res.Code == HttpStatusCode.OK && string.IsNullOrWhiteSpace(res.Body))
+            {
+                additionalMsg = " - this is most likely a broken subtitle, report at opensubtitles.com/contact and make sure to include the id";
+                if (!_badSubtitleIds.Contains(fileId))
+                {
+                    _badSubtitleIds.Add(fileId);
+                }
+            }
+
             var msg = string.Format(
                 CultureInfo.InvariantCulture,
-                "Subtitle with Id {0} could not be downloaded: {1}",
+                "Subtitle with Id {0} could not be downloaded: {1}{2}",
                 fileId,
-                res.Code);
+                res.Code,
+                additionalMsg);
 
             throw new HttpRequestException(msg);
         }
