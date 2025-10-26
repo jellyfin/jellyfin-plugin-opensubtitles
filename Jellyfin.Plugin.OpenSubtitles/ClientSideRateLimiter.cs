@@ -18,7 +18,7 @@ internal sealed class ClientSideRateLimitedHandler : DelegatingHandler
     private static readonly RateLimiter _rateLimiter = new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
     {
         PermitLimit = 5,
-        Window = TimeSpan.FromSeconds(5)
+        Window = TimeSpan.FromSeconds(1)
     });
 
     internal ClientSideRateLimitedHandler(ILogger<ClientSideRateLimitedHandler> logger)
