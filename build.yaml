@@ -1,7 +1,7 @@
 name: "Open Subtitles"
 guid: "4b9ed42f-5185-48b5-9803-6ff2989014c4"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-opensubtitles.png"
-version: 22
+version: 23
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 owner: "jellyfin"
@@ -11,4 +11,5 @@ category: "Subtitles"
 artifacts:
   - "Jellyfin.Plugin.OpenSubtitles.dll"
 changelog: |-
-  - Don't dispose the static rate limiter (#173) @crobibero
+  - 5 requests per second, not 5 requests per 5 second (#175) @crobibero
+  - Add bad subtitle handling (#165) @MBR-0001
