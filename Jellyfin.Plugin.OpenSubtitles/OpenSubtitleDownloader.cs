@@ -187,7 +187,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             && (request.ContentType == VideoContentType.Episode
                 ? x.Attributes.FeatureDetails.SeasonNumber == request.ParentIndexNumber
                   && x.Attributes.FeatureDetails.EpisodeNumber == request.IndexNumber
-                : x.Attributes.FeatureDetails?.ImdbId == imdbId);
+                : imdbId == 0 || x.Attributes.FeatureDetails?.ImdbId == imdbId);
 
         bool MatchFilter(ResponseData x) => !request.IsPerfectMatch || (x.Attributes?.MovieHashMatch ?? false);
 
