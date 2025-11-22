@@ -47,7 +47,8 @@ public static class RequestHandler
         if (response.statusCode == HttpStatusCode.TooManyRequests
             && attempt < RetryLimit
             && response.headers.TryGetValue(HeaderNames.RetryAfter, out var retryAfterStr)
-            && int.TryParse(retryAfterStr, out var retryAfter))
+            && int.TryParse(retryAfterStr, out var retryAfter)
+            && retryAfter >=0)
         {
             await Task.Delay(TimeSpan.FromSeconds(retryAfter), cancellationToken).ConfigureAwait(false);
             return await SendRequestAsync(endpoint, method, body, headers, attempt + 1, cancellationToken).ConfigureAwait(false);
