@@ -17,7 +17,7 @@ public class FeatureDetails
     /// Gets or sets the imdb id.
     /// </summary>
     [JsonPropertyName("imdb_id")]
-    public int ImdbId { get; set; }
+    public int? ImdbId { get; set; }
 
     /// <summary>
     /// Gets or sets the season number.
