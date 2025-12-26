@@ -122,42 +122,41 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             }
         }
 
-        var options = new Dictionary<string, string>();
-        if (request.IsPerfectMatch && !string.IsNullOrEmpty(hash))
+        var options = new Dictionary<string, string>
         {
-            options.Add("languages", language);
+            { "languages", language },
+            { "type", request.ContentType == VideoContentType.Episode ? "episode" : "movie" }
+        };
+
+        if (!string.IsNullOrEmpty(hash))
+        {
             options.Add("moviehash", hash);
+
+            if (request.IsPerfectMatch)
+            {
+                options.Add("moviehash_match", "only");
+            }
+        }
+
+        // If we have the IMDb ID we use that, otherwise query with the details
+        if (imdbId != 0)
+        {
+            options.Add("imdb_id", imdbId.ToString(CultureInfo.InvariantCulture));
         }
         else
         {
-            options.Add("languages", language);
-            options.Add("type", request.ContentType == VideoContentType.Episode ? "episode" : "movie");
+            options.Add("query", Path.GetFileName(request.MediaPath));
 
-            if (!string.IsNullOrEmpty(hash))
+            if (request.ContentType == VideoContentType.Episode)
             {
-                options.Add("moviehash", hash);
-            }
-
-            // If we have the IMDb ID we use that, otherwise query with the details
-            if (imdbId != 0)
-            {
-                options.Add("imdb_id", imdbId.ToString(CultureInfo.InvariantCulture));
-            }
-            else
-            {
-                options.Add("query", Path.GetFileName(request.MediaPath));
-
-                if (request.ContentType == VideoContentType.Episode)
+                if (request.ParentIndexNumber.HasValue)
                 {
-                    if (request.ParentIndexNumber.HasValue)
-                    {
-                        options.Add("season_number", request.ParentIndexNumber.Value.ToString(CultureInfo.InvariantCulture));
-                    }
+                    options.Add("season_number", request.ParentIndexNumber.Value.ToString(CultureInfo.InvariantCulture));
+                }
 
-                    if (request.IndexNumber.HasValue)
-                    {
-                        options.Add("episode_number", request.IndexNumber.Value.ToString(CultureInfo.InvariantCulture));
-                    }
+                if (request.IndexNumber.HasValue)
+                {
+                    options.Add("episode_number", request.IndexNumber.Value.ToString(CultureInfo.InvariantCulture));
                 }
             }
         }
@@ -187,7 +186,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             && (request.ContentType == VideoContentType.Episode
                 ? x.Attributes.FeatureDetails.SeasonNumber == request.ParentIndexNumber
                   && x.Attributes.FeatureDetails.EpisodeNumber == request.IndexNumber
-                : x.Attributes.FeatureDetails?.ImdbId == imdbId);
+                : imdbId == 0 || x.Attributes.FeatureDetails?.ImdbId == imdbId);
 
         bool MatchFilter(ResponseData x) => !request.IsPerfectMatch || (x.Attributes?.MovieHashMatch ?? false);
 
