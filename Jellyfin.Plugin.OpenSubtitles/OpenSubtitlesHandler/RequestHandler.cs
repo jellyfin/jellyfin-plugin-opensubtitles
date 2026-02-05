@@ -29,6 +29,7 @@ public static class RequestHandler
     /// <param name="headers">The headers.</param>
     /// <param name="attempt">The request attempt key.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name="isFullUrl">The flag to not append baseUrl.</param>
     /// <returns>The response.</returns>
     /// <exception cref="ArgumentException">API Key is empty.</exception>
     public static async Task<HttpResponse> SendRequestAsync(
@@ -37,12 +38,14 @@ public static class RequestHandler
         object? body,
         Dictionary<string, string>? headers,
         int attempt,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool isFullUrl = false)
     {
         headers ??= new Dictionary<string, string>();
         headers.TryAdd("Api-Key", OpenSubtitlesPlugin.ApiKey);
 
-        var response = await OpenSubtitlesRequestHelper.Instance!.SendRequestAsync(BaseApiUrl + endpoint, method, body, headers, cancellationToken).ConfigureAwait(false);
+        var url = isFullUrl ? endpoint : BaseApiUrl + endpoint;
+        var response = await OpenSubtitlesRequestHelper.Instance!.SendRequestAsync(url, method, body, headers, cancellationToken).ConfigureAwait(false);
 
         if (response.statusCode == HttpStatusCode.TooManyRequests
             && attempt < RetryLimit
