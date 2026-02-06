@@ -95,18 +95,14 @@ public static class OpenSubtitlesApi
     /// <returns>The Http response.</returns>
     public static async Task<HttpResponse> DownloadSubtitleAsync(string url, CancellationToken cancellationToken)
     {
-        var response = await OpenSubtitlesRequestHelper.Instance!.SendRequestAsync(
+        return await RequestHandler.SendRequestAsync(
             url,
             HttpMethod.Get,
             null,
-            new Dictionary<string, string>(),
-            cancellationToken).ConfigureAwait(false);
-
-        return new HttpResponse
-        {
-            Body = response.body,
-            Code = response.statusCode
-        };
+            [],
+            1,
+            cancellationToken,
+            true).ConfigureAwait(false);
     }
 
     /// <summary>

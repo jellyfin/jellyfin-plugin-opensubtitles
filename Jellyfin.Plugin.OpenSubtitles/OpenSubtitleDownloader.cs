@@ -53,8 +53,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
     public static OpenSubtitleDownloader? Instance { get; private set; }
 
     /// <inheritdoc />
-    public string Name
-        => "Open Subtitles";
+    public string Name => "Open Subtitles";
 
     /// <inheritdoc />
     public IEnumerable<VideoContentType> SupportedMediaTypes
@@ -284,10 +283,9 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             .GetSubtitleLinkAsync(fileId, format, _login, cancellationToken)
             .ConfigureAwait(false);
 
-        if (info.Data?.ResetTime is not null)
+        if (info.Data?.ResetTime is DateTime time)
         {
-            _limitReset = info.Data.ResetTime;
-            _logger.LogDebug("Updated expiration time to {ResetTime}", _limitReset);
+            UpdateResetTime(time);
         }
 
         if (!info.Ok)
@@ -306,6 +304,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
                 }
 
                 case HttpStatusCode.Unauthorized:
+                    _logger.LogDebug("Received Unauthorized while downloading subtitle {FileId}, resetting login", fileId);
                     // JWT token expired, obtain a new one and try again?
                     _login = null;
                     return await GetSubtitlesInternal(id, cancellationToken).ConfigureAwait(false);
@@ -479,5 +478,17 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         _configuration = e;
         // force a login next time a request is made
         _login = null;
+    }
+
+    private void UpdateResetTime(DateTime resetTime)
+    {
+        // Do not update if the time is within 2s (api seems to return different values that are within a second or two of each other)
+        if (_limitReset.HasValue && Math.Abs(_limitReset.Value.Subtract(resetTime).TotalSeconds) <= 2)
+        {
+            return;
+        }
+
+        _limitReset = resetTime;
+        _logger.LogDebug("Updated expiration time to {ResetTime}", _limitReset);
     }
 }
