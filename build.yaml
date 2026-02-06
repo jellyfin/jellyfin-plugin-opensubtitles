@@ -1,8 +1,8 @@
 name: "Open Subtitles"
 guid: "4b9ed42f-5185-48b5-9803-6ff2989014c4"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-opensubtitles.png"
-version: 23
-targetAbi: "10.11.0.0"
+version: 24
+targetAbi: "10.11.6.0"
 framework: "net9.0"
 owner: "jellyfin"
 overview: "Download subtitles for your media"
@@ -11,5 +11,13 @@ category: "Subtitles"
 artifacts:
   - "Jellyfin.Plugin.OpenSubtitles.dll"
 changelog: |-
-  - 5 requests per second, not 5 requests per 5 second (#175) @crobibero
-  - Add bad subtitle handling (#165) @MBR-0001
+  - Fix 429 handling (#189) @MBR-0001
+  - Revert "Update dependency Microsoft.Extensions.Http to v10" (#184) @Shadowghost
+  - imdbId fixes (#182) @MBR-0001
+
+  ### Dependency updates ###
+  - Update dependency xunit to 2.9.3 (#137) @[renovate[bot]](https://github.com/apps/renovate)
+  - Update dependency coverlet.collector to v6 (#125) @[renovate[bot]](https://github.com/apps/renovate)
+  - Update dependency xunit.runner.visualstudio to v3 (#158) @[renovate[bot]](https://github.com/apps/renovate)
+  - Update dependency Microsoft.NET.Test.Sdk to v18 - autoclosed (#170) @[renovate[bot]](https://github.com/apps/renovate)
+  - Update dependency Microsoft.Extensions.Http to v10 (#178) @[renovate[bot]](https://github.com/apps/renovate)
