@@ -169,7 +169,16 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             _logger.LogError("Invalid response: {Code} - {Body}", searchResponse.Code, searchResponse.Body);
             return Enumerable.Empty<RemoteSubtitleInfo>();
         }
-
+        else if (searchResponse.Data is null)
+        {
+            newOptions = options;
+            newOptions.Remove("languages");
+            searchResponse = await OpenSubtitlesApi.SearchSubtitlesAsync(newOptions, cancellationToken).ConfigureAwait(false);
+            var langFiltersearchResponse = FilterByLang(options.Value("languages"), searchResponse);
+            if (searchResponse.Data is null)
+               searchResponse = langFiltersearchResponse;
+        }
+        
         if (searchResponse.Data is null)
         {
             return Enumerable.Empty<RemoteSubtitleInfo>();
