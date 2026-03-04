@@ -170,13 +170,15 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             return Enumerable.Empty<RemoteSubtitleInfo>();
         }
         else if (searchResponse.Data is null)
-        {
-            newOptions = options;
-            newOptions.Remove("languages");
-            searchResponse = await OpenSubtitlesApi.SearchSubtitlesAsync(newOptions, cancellationToken).ConfigureAwait(false);
-            var langFiltersearchResponse = FilterByLang(options.Value("languages"), searchResponse);
-            if (searchResponse.Data is null)
-               searchResponse = langFiltersearchResponse;
+        { 
+            var subtitleResult = await SearchSubtitleFromHtmlAsync(request.Name, request.Year?.ToString(), cancellationToken).ConfigureAwait(false);
+            if (subtitleResult != null)
+            {
+                 searchResponse = CreateSearchResponseFromHtml(subtitleResult.Value.Link, subtitleResult.Value.Name);
+            }
+
+            
+            
         }
         
         if (searchResponse.Data is null)
@@ -500,4 +502,58 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         _limitReset = resetTime;
         _logger.LogDebug("Updated expiration time to {ResetTime}", _limitReset);
     }
+
+private async Task<(string Link, string Name)?> SearchSubtitleFromHtmlAsync(string title, string year, CancellationToken cancellationToken)
+{
+    try
+    {
+        using (var client = new HttpClient())
+        {
+            // URL encode the title for the search query
+            string encodedTitle = Uri.EscapeDataString(title);
+            string url = $"https://www.opensubtitles.org/en/search2?MovieName={encodedTitle}&id=8&action=search&SubLanguageID=bul&MovieYear={year}";
+
+            var response = await client.GetAsync(url, cancellationToken).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+            var html = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+            // Parse HTML for download link and subtitle name
+            var pattern = @"<a itemprop=""url"" title=""Download"" href=""(?<link>https://dl\.opensubtitles\.org/en/download/sub/\d+)""><span itemprop=""name"">(?<name>[^<]+)</span></a>";
+            var match = System.Text.RegularExpressions.Regex.Match(html, pattern);
+
+            if (match.Success)
+            {
+                return (match.Groups["link"].Value, match.Groups["name"].Value);
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        // Log exception if needed
+        _logger?.LogError(ex, "Error searching subtitle from HTML");
+    }
+
+    return null;
+}
+
+private SearchResponse CreateSearchResponseFromHtml(string downloadLink, string subtitleName)
+{
+    // Convert HTML parsing result to your SearchResponse object
+    // This depends on your response structure - adjust as needed
+    return new SearchResponse
+    {
+        Data = new List<SubtitleData>
+        {
+            new SubtitleData
+            {
+                Attributes = new SubtitleAttributes
+                {
+                    Url = downloadLink,
+                    Name = subtitleName
+                }
+            }
+        }
+    };
+}
+    
 }
