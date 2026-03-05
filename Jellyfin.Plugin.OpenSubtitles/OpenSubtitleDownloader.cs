@@ -171,14 +171,9 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         }
         else if (searchResponse.Data is null)
         { 
-            var subtitleResult = await SearchSubtitleFromHtmlAsync(request.Name, request.Year?.ToString(), cancellationToken).ConfigureAwait(false);
+            var subtitleResult = await SearchSubtitleFromHtmlAsync(request.Name, request.ProductionYear.Value.ToString(), cancellationToken).ConfigureAwait(false);
             if (subtitleResult != null)
-            {
-                 searchResponse = CreateSearchResponseFromHtml(subtitleResult.Value.Link, subtitleResult.Value.Name);
-            }
-
-            
-            
+                 searchResponse.Data.Append( CreateSearchResponseFromHtml(subtitleResult.Value.Link, subtitleResult.Value.Name) );
         }
         
         if (searchResponse.Data is null)
@@ -503,57 +498,96 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         _logger.LogDebug("Updated expiration time to {ResetTime}", _limitReset);
     }
 
-private async Task<(string Link, string Name)?> SearchSubtitleFromHtmlAsync(string title, string year, CancellationToken cancellationToken)
-{
-    try
+    private async Task<(string Link, string Name)?> SearchSubtitleFromHtmlAsync(string title, string year, CancellationToken cancellationToken)
     {
-        using (var client = new HttpClient())
+        try
         {
-            // URL encode the title for the search query
-            string encodedTitle = Uri.EscapeDataString(title);
-            string url = $"https://www.opensubtitles.org/en/search2?MovieName={encodedTitle}&id=8&action=search&SubLanguageID=bul&MovieYear={year}";
-
-            var response = await client.GetAsync(url, cancellationToken).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
-            var html = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-            // Parse HTML for download link and subtitle name
-            var pattern = @"<a itemprop=""url"" title=""Download"" href=""(?<link>https://dl\.opensubtitles\.org/en/download/sub/\d+)""><span itemprop=""name"">(?<name>[^<]+)</span></a>";
-            var match = System.Text.RegularExpressions.Regex.Match(html, pattern);
-
-            if (match.Success)
+            using (var client = new HttpClient())
             {
-                return (match.Groups["link"].Value, match.Groups["name"].Value);
-            }
-        }
-    }
-    catch (Exception ex)
-    {
-        // Log exception if needed
-        _logger?.LogError(ex, "Error searching subtitle from HTML");
-    }
+                // URL encode the title for the search query
+                string encodedTitle = Uri.EscapeDataString(title);
+                string url = $"https://www.opensubtitles.org/en/search2?MovieName={encodedTitle}&id=8&action=search&SubLanguageID=bul&MovieYear={year}";
 
-    return null;
-}
+                var response = await client.GetAsync(url, cancellationToken).ConfigureAwait(false);
+                response.EnsureSuccessStatusCode();
+                var html = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-private SearchResponse CreateSearchResponseFromHtml(string downloadLink, string subtitleName)
-{
-    // Convert HTML parsing result to your SearchResponse object
-    // This depends on your response structure - adjust as needed
-    return new SearchResponse
-    {
-        Data = new List<SubtitleData>
-        {
-            new SubtitleData
-            {
-                Attributes = new SubtitleAttributes
+                // Parse HTML for download link and subtitle name
+                var pattern = @"<a itemprop=""url"" title=""Download"" href=""(?<link>https://dl\.opensubtitles\.org/en/download/sub/\d+)""><span itemprop=""name"">(?<name>[^<]+)</span></a>";
+                var match = System.Text.RegularExpressions.Regex.Match(html, pattern);
+
+                if (match.Success)
                 {
-                    Url = downloadLink,
-                    Name = subtitleName
+                    return (match.Groups["link"].Value, match.Groups["name"].Value);
                 }
             }
         }
-    };
-}
-    
+        catch (Exception ex)
+        {
+            // Log exception if needed
+            _logger?.LogError(ex, "Error searching subtitle from HTML");
+        }
+
+        return null;
+    }
+
+    private ResponseData CreateSearchResponseFromHtml(string downloadLink, string subtitleName)
+    {
+        /*
+        var responseData = new ResponseData
+        {
+            Data = new List<SubtitleData>
+            {
+                new SubtitleData
+                {
+                    Attributes = new SubtitleAttributes
+                    {
+                        Url = downloadLink,
+                        Name = subtitleName
+                    }
+                }
+            }
+        };
+        */
+
+        var result = new ResponseData
+        {
+            Attributes = new Attributes
+            {
+                Files = new List<SubFile>
+                {
+                    new SubFile
+                    {
+                       FileId = LoadIdFromLink(downloadLink)
+                    }
+                },
+                // Url = downloadLink,
+                // Name = subtitleName,
+                Uploader = new Uploader
+                {
+                        Name = "Unknown" // No uploader information available from HTML, set to "Unknown" or a default value
+                },
+                Release = subtitleName,
+                DownloadCount = 0, // No download count available from HTML, set to 0 or a default value
+                Ratings = 0, // No ratings available from HTML, set to 0 or a default value
+                Fps = 0, // No FPS information available from HTML, set to 0 or a default value
+                FromTrusted = false, // No trusted uploader information available from HTML, set to false or a default value
+                UploadDate = DateTime.MinValue // No upload date available from HTML, set to DateTime.MinValue or a default value
+            }
+        };
+
+        return result;
+    }
+
+    private int LoadIdFromLink(string link)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(link, @"https://dl\.opensubtitles\.org/en/download/sub/(?<id>\d+)");
+        if (match.Success && int.TryParse(match.Groups["id"].Value, out var id))
+        {
+            return id;
+        }
+
+        throw new FormatException($"Unable to extract subtitle ID from link: {link}");
+    }
+
 }
