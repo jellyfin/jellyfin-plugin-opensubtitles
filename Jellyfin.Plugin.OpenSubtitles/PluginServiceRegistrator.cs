@@ -32,7 +32,6 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
             {
                 AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
             };
-    
             // Wrap your existing rate-limited handler around the base handler
             return new ClientSideRateLimitedHandler(c.GetRequiredService<ILogger<ClientSideRateLimitedHandler>>(), baseHandler);
         });
