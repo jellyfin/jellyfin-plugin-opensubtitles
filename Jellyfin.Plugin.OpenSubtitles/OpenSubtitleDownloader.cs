@@ -483,10 +483,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
     private void UpdateResetTime(DateTime resetTime)
     {
         // Do not update if the time is within 2s (api seems to return different values that are within a second or two of each other)
-        if (
-            _limitReset.HasValue
-            && Math.Abs(_limitReset.Value.Subtract(resetTime).TotalSeconds) <= 2
-        )
+        if (_limitReset.HasValue && Math.Abs(_limitReset.Value.Subtract(resetTime).TotalSeconds) <= 2)
         {
             return;
         }
