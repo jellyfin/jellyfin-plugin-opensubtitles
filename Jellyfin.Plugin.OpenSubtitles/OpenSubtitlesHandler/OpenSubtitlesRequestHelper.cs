@@ -23,6 +23,7 @@ namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler;
 public class OpenSubtitlesRequestHelper
 {
     private readonly IHttpClientFactory _clientFactory;
+    private readonly ILogger<OpenSubtitleDownloader> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="OpenSubtitlesRequestHelper"/> class.
@@ -31,6 +32,7 @@ public class OpenSubtitlesRequestHelper
     public OpenSubtitlesRequestHelper(ILogger<OpenSubtitleDownloader> logger, IHttpClientFactory factory)
     {
         _clientFactory = factory;
+        _logger = logger;
     }
 
     /// <summary>
