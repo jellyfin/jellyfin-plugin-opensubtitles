@@ -57,8 +57,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
     public string Name => "Open Subtitles";
 
     /// <inheritdoc />
-    public IEnumerable<VideoContentType> SupportedMediaTypes =>
-        new[] { VideoContentType.Episode, VideoContentType.Movie };
+    public IEnumerable<VideoContentType> SupportedMediaTypes => new[] { VideoContentType.Episode, VideoContentType.Movie };
 
     /// <inheritdoc />
     public Task<SubtitleResponse> GetSubtitles(string id, CancellationToken cancellationToken) => GetSubtitlesInternal(id, cancellationToken);
