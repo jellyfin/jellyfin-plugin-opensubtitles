@@ -170,17 +170,25 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             return Enumerable.Empty<RemoteSubtitleInfo>();
         }
         else if (searchResponse.Data is null)
-        { 
-            var subtitleResult = await SearchSubtitleFromHtmlAsync(request.Name, request.ProductionYear.Value.ToString(), cancellationToken).ConfigureAwait(false);
+        {
+            var subtitleResult = await SearchSubtitleFromHtmlAsync(request, cancellationToken).ConfigureAwait(false);
             if (subtitleResult != null)
-                 searchResponse.Data.Append( CreateSearchResponseFromHtml(subtitleResult.Value.Link, subtitleResult.Value.Name) );
+            {
+                var newData = new List<ResponseData> { CreateSearchResponseFromHtml(subtitleResult.Value.Link, subtitleResult.Value.Name) };
+                return ProcessResults(newData, request, imdbId);
+            }
         }
-        
+
         if (searchResponse.Data is null)
         {
             return Enumerable.Empty<RemoteSubtitleInfo>();
         }
 
+        return ProcessResults(searchResponse.Data.ToList(), request, imdbId);
+    }
+
+    private IEnumerable<RemoteSubtitleInfo> ProcessResults(List<ResponseData> data, SubtitleSearchRequest request, long imdbId)
+    {
         bool BadSubtitleFilter(ResponseData x) =>
             x.Attributes?.Files?.Count > 0 &&
             x.Attributes.Files[0].FileId.HasValue
@@ -195,7 +203,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
 
         bool MatchFilter(ResponseData x) => !request.IsPerfectMatch || (x.Attributes?.MovieHashMatch ?? false);
 
-        return searchResponse.Data
+        return data
             .Where(x => BadSubtitleFilter(x) && MediaFilter(x) && MatchFilter(x))
             .OrderByDescending(x => x.Attributes!.MovieHashMatch ?? false)
             .ThenByDescending(x => x.Attributes!.DownloadCount)
@@ -498,19 +506,19 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         _logger.LogDebug("Updated expiration time to {ResetTime}", _limitReset);
     }
 
-    private async Task<(string Link, string Name)?> SearchSubtitleFromHtmlAsync(string title, string year, CancellationToken cancellationToken)
+    private async Task<(string Link, string Name)?> SearchSubtitleFromHtmlAsync(SubtitleSearchRequest request, CancellationToken cancellationToken)
     {
         try
         {
             using (var client = new HttpClient())
             {
-                // URL encode the title for the search query
-                string encodedTitle = Uri.EscapeDataString(title);
+                string encodedTitle = Uri.EscapeDataString(request.Name);
+                string year = request.ProductionYear?.ToString(CultureInfo.InvariantCulture) ?? DateTime.Now.Year.ToString(CultureInfo.InvariantCulture);
                 string url = $"https://www.opensubtitles.org/en/search2?MovieName={encodedTitle}&id=8&action=search&SubLanguageID=bul&MovieYear={year}";
 
                 var response = await client.GetAsync(url, cancellationToken).ConfigureAwait(false);
                 response.EnsureSuccessStatusCode();
-                var html = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                var html = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
                 // Parse HTML for download link and subtitle name
                 var pattern = @"<a itemprop=""url"" title=""Download"" href=""(?<link>https://dl\.opensubtitles\.org/en/download/sub/\d+)""><span itemprop=""name"">(?<name>[^<]+)</span></a>";
@@ -589,5 +597,4 @@ public class OpenSubtitleDownloader : ISubtitleProvider
 
         throw new FormatException($"Unable to extract subtitle ID from link: {link}");
     }
-
 }

@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/tests/">
+    <Project Path="tests/Jellyfin.Plugin.OpenSubtitles.Tests/Jellyfin.Plugin.OpenSubtitles.Tests.csproj" />
+  </Folder>
+  <Project Path="Jellyfin.Plugin.OpenSubtitles/Jellyfin.Plugin.OpenSubtitles.csproj" />
+</Solution>
