@@ -179,8 +179,15 @@ public class OpenSubtitleDownloader : ISubtitleProvider
                 return ProcessResults(subtitleResult.Data.ToList(), request, imdbId);
             }
         }
-
-        return Enumerable.Empty<RemoteSubtitleInfo>();
+        
+        if (searchResponse.Ok && searchResponse.Data != null)
+        {
+            return ProcessResults(subtitleResult.Data.ToList(), request, imdbId);
+        }
+        else
+        {
+             return Enumerable.Empty<RemoteSubtitleInfo>();
+        }
     }
 
     private IEnumerable<RemoteSubtitleInfo> ProcessResults(List<ResponseData> data, SubtitleSearchRequest request, long imdbId)
