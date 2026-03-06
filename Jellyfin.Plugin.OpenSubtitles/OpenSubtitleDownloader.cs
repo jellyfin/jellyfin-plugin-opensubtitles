@@ -170,7 +170,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             _logger.LogError("Invalid response: {Code} - {Body}", searchResponse.Code, searchResponse.Body);
             return Enumerable.Empty<RemoteSubtitleInfo>();
         }
-        else if (searchResponse.Data is null)
+        else if (searchResponse.Data is null || !searchResponse.Data.Any())
         {
             _logger.LogInformation("Search trying single file.");
             var subtitleResult = await SearchSubtitleFromHtmlAsync(request, options, cancellationToken).ConfigureAwait(false);
