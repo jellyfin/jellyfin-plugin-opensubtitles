@@ -112,9 +112,10 @@ public class OpenSubtitlesRequestHelper
     /// Search subtitle from HTML page.
     /// </summary>
     /// <param name="request">The subtitle search request.</param>
+    /// <param name="options">The options.</param>
     /// <param name="cancellationToken">cancel token.</param>
     /// <returns>The download link and subtitle name, or null if not found.</returns>
-    public async Task<(string Link, string Name)?> SearchSubtitleFromHtmlAsync2(SubtitleSearchRequest request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<IReadOnlyList<ResponseData>>> SearchSubtitleFromHtmlAsync(SubtitleSearchRequest request, Dictionary<string, string> options, CancellationToken cancellationToken)
     {
         string title = request.Name;
         string year = request.ProductionYear?.ToString(CultureInfo.InvariantCulture) ?? DateTime.Now.Year.ToString(CultureInfo.InvariantCulture);
@@ -122,38 +123,7 @@ public class OpenSubtitlesRequestHelper
         using var client = _clientFactory.CreateClient(nameof(OpenSubtitles));
 
         string encodedTitle = Uri.EscapeDataString(title);
-        string url = $"https://www.opensubtitles.org/en/search2?MovieName={encodedTitle}&id=8&action=search&SubLanguageID=bul&MovieYear={year}";
-
-        var response = await client.GetAsync(url, cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        var html = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-
-        var pattern = @"<a itemprop=""url"" title=""Download"" href=""(?<link>https://dl\.opensubtitles\.org/en/download/sub/\d+)""><span itemprop=""name"">(?<name>[^<]+)</span></a>";
-        var match = System.Text.RegularExpressions.Regex.Match(html, pattern);
-
-        if (match.Success)
-        {
-            return (match.Groups["link"].Value, match.Groups["name"].Value);
-        }
-
-        return null;
-    }
-
-     /// <summary>
-    /// Search subtitle from HTML page.
-    /// </summary>
-    /// <param name="request">The subtitle search request.</param>
-    /// <param name="cancellationToken">cancel token.</param>
-    /// <returns>The download link and subtitle name, or null if not found.</returns>
-    public async Task<ApiResponse<IReadOnlyList<ResponseData>>> SearchSubtitleFromHtmlAsync(SubtitleSearchRequest request, CancellationToken cancellationToken)
-    {
-        string title = request.Name;
-        string year = request.ProductionYear?.ToString(CultureInfo.InvariantCulture) ?? DateTime.Now.Year.ToString(CultureInfo.InvariantCulture);
-
-        using var client = _clientFactory.CreateClient(nameof(OpenSubtitles));
-
-        string encodedTitle = Uri.EscapeDataString(title);
-        string url = $"https://www.opensubtitles.org/en/search2?MovieName={encodedTitle}&id=8&action=search&SubLanguageID=bul&MovieYear={year}";
+        string url = $@"https://www.opensubtitles.org/en/search2?MovieName={encodedTitle}&id=8&action=search&SubLanguageID=bul&MovieYear={year}";
 
         var response = await client.GetAsync(url, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();

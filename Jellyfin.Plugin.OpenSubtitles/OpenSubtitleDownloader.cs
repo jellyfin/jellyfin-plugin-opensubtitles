@@ -170,7 +170,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         }
         else if (searchResponse.Data is null)
         {
-            var subtitleResult = await SearchSubtitleFromHtmlAsync(request, cancellationToken).ConfigureAwait(false);
+            var subtitleResult = await SearchSubtitleFromHtmlAsync(request, options, cancellationToken).ConfigureAwait(false);
             if (subtitleResult?.Ok == true && subtitleResult.Data != null)
             {
                 return ProcessResults(subtitleResult.Data.ToList(), request, imdbId);
@@ -485,11 +485,11 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         _logger.LogDebug("Updated expiration time to {ResetTime}", _limitReset);
     }
 
-    private async Task<ApiResponse<IReadOnlyList<ResponseData>>?> SearchSubtitleFromHtmlAsync(SubtitleSearchRequest request, CancellationToken cancellationToken)
+    private async Task<ApiResponse<IReadOnlyList<ResponseData>>?> SearchSubtitleFromHtmlAsync(SubtitleSearchRequest request, Dictionary<string, string> options, CancellationToken cancellationToken)
     {
         try
         {
-            return await OpenSubtitlesRequestHelper.Instance!.SearchSubtitleFromHtmlAsync(request, cancellationToken).ConfigureAwait(false);
+            return await OpenSubtitlesRequestHelper.Instance!.SearchSubtitleFromHtmlAsync(request, options, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
