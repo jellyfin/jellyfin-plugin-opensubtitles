@@ -36,8 +36,6 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
             // Wrap your existing rate-limited handler around the base handler
             return new ClientSideRateLimitedHandler(c.GetRequiredService<ILogger<ClientSideRateLimitedHandler>>(), baseHandler);
         });
-    
         serviceCollection.AddSingleton<ISubtitleProvider, OpenSubtitleDownloader>();
     }
-    
 }
