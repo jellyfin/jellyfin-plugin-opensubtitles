@@ -1,11 +1,11 @@
-using System.Net.Http;
-using System.Net;
-using System.Net.Http.Headers;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Controller.Subtitles;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 
 namespace Jellyfin.Plugin.OpenSubtitles;
 
