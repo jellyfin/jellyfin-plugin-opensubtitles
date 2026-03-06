@@ -65,6 +65,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
     /// <inheritdoc />
     public async Task<IEnumerable<RemoteSubtitleInfo>> Search(SubtitleSearchRequest request, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Search task started.");
         ArgumentNullException.ThrowIfNull(request);
 
         await Login(cancellationToken).ConfigureAwait(false);
@@ -160,6 +161,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         }
 
         _logger.LogDebug("Search query: {Query}", options);
+        _logger.LogInformation("Search query: {Query}", options);
 
         var searchResponse = await OpenSubtitlesApi.SearchSubtitlesAsync(options, cancellationToken).ConfigureAwait(false);
 
@@ -170,6 +172,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         }
         else if (searchResponse.Data is null)
         {
+            _logger.LogInformation("Search trying single file.");
             var subtitleResult = await SearchSubtitleFromHtmlAsync(request, options, cancellationToken).ConfigureAwait(false);
             if (subtitleResult?.Ok == true && subtitleResult.Data != null)
             {
@@ -341,8 +344,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             var additionalMsg = string.Empty;
             if (res.Code == HttpStatusCode.OK && string.IsNullOrWhiteSpace(res.Body))
             {
-                additionalMsg =
-                    " - this is most likely a broken subtitle, report at opensubtitles.com/contact and make sure to include the id";
+                additionalMsg = " - this is most likely a broken subtitle, report at opensubtitles.com/contact and make sure to include the id";
                 if (!_badSubtitleIds.Contains(fileId))
                 {
                     _badSubtitleIds.Add(fileId);
