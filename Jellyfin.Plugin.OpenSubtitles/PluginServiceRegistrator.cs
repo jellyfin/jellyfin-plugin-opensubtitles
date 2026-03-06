@@ -24,8 +24,20 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
                 "Jellyfin-Plugin-OpenSubtitles",
                 System.Reflection.Assembly.GetExecutingAssembly().GetName().Version!.ToString()));
             c.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
-        }).ConfigurePrimaryHttpMessageHandler(c => new ClientSideRateLimitedHandler(c.GetRequiredService<ILogger<ClientSideRateLimitedHandler>>()));
-
+        })
+        .ConfigurePrimaryHttpMessageHandler(c =>
+        {
+            // Base handler with automatic GZIP/Deflate decompression
+            var baseHandler = new HttpClientHandler
+            {
+                AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+            };
+    
+            // Wrap your existing rate-limited handler around the base handler
+            return new ClientSideRateLimitedHandler(c.GetRequiredService<ILogger<ClientSideRateLimitedHandler>>(), baseHandler);
+        });
+    
         serviceCollection.AddSingleton<ISubtitleProvider, OpenSubtitleDownloader>();
     }
+    
 }
