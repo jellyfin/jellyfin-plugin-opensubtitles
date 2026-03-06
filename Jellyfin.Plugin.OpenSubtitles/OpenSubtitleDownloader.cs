@@ -182,10 +182,12 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         
         if (searchResponse.Ok && searchResponse.Data != null)
         {
+            _logger.LogInformation("Search response is OK. Data is OK.");
             return ProcessResults(subtitleResult.Data.ToList(), request, imdbId);
         }
         else
         {
+            _logger.LogInformation("Empty response.");
              return Enumerable.Empty<RemoteSubtitleInfo>();
         }
     }
