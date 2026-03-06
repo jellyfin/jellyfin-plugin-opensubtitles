@@ -28,7 +28,7 @@ public class OpenSubtitlesRequestHelper
     /// Initializes a new instance of the <see cref="OpenSubtitlesRequestHelper"/> class.
     /// </summary>
     /// <param name="factory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
-    public OpenSubtitlesRequestHelper(IHttpClientFactory factory)
+    public OpenSubtitlesRequestHelper(ILogger<OpenSubtitleDownloader> logger, IHttpClientFactory factory)
     {
         _clientFactory = factory;
     }
