@@ -389,13 +389,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         if (!loginResponse.Ok)
         {
             // 400 = Using email, 401 = invalid credentials
-            if (
-                (
-                    loginResponse.Code == HttpStatusCode.BadRequest
-                    && _configuration.Username.Contains('@', StringComparison.OrdinalIgnoreCase)
-                )
-                || loginResponse.Code == HttpStatusCode.Unauthorized
-            )
+            if ((loginResponse.Code == HttpStatusCode.BadRequest && _configuration.Username.Contains('@', StringComparison.OrdinalIgnoreCase)) || loginResponse.Code == HttpStatusCode.Unauthorized)
             {
                 _logger.LogError("Login failed due to invalid credentials, invalidating them ({Code} - {Body})", loginResponse.Code, loginResponse.Body);
                 _configuration.CredentialsInvalid = true;
