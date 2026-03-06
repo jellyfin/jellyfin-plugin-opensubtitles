@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.OpenSubtitles.Configuration;
 using Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler;
+using Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models;
 using Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models.Responses;
 using MediaBrowser.Common.Extensions;
 using MediaBrowser.Controller.Providers;
@@ -60,8 +61,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         new[] { VideoContentType.Episode, VideoContentType.Movie };
 
     /// <inheritdoc />
-    public Task<SubtitleResponse> GetSubtitles(string id, CancellationToken cancellationToken) =>
-        GetSubtitlesInternal(id, cancellationToken);
+    public Task<SubtitleResponse> GetSubtitles(string id, CancellationToken cancellationToken) => GetSubtitlesInternal(id, cancellationToken);
 
     /// <inheritdoc />
     public async Task<IEnumerable<RemoteSubtitleInfo>> Search(SubtitleSearchRequest request, CancellationToken cancellationToken)
@@ -172,22 +172,13 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         else if (searchResponse.Data is null)
         {
             var subtitleResult = await SearchSubtitleFromHtmlAsync(request, cancellationToken).ConfigureAwait(false);
-            if (subtitleResult != null)
+            if (subtitleResult?.Ok == true && subtitleResult.Data != null)
             {
-                var newData = new List<ResponseData>
-                {
-                    CreateSearchResponseFromHtml(subtitleResult.Value.Link, subtitleResult.Value.Name),
-                };
-                return ProcessResults(newData, request, imdbId);
+                return ProcessResults(subtitleResult.Data.ToList(), request, imdbId);
             }
         }
 
-        if (searchResponse.Data is null)
-        {
-            return Enumerable.Empty<RemoteSubtitleInfo>();
-        }
-
-        return ProcessResults(searchResponse.Data.ToList(), request, imdbId);
+        return Enumerable.Empty<RemoteSubtitleInfo>();
     }
 
     private IEnumerable<RemoteSubtitleInfo> ProcessResults(List<ResponseData> data, SubtitleSearchRequest request, long imdbId)
@@ -504,11 +495,10 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         _logger.LogDebug("Updated expiration time to {ResetTime}", _limitReset);
     }
 
-    private async Task<(string Link, string Name)?> SearchSubtitleFromHtmlAsync(SubtitleSearchRequest request, CancellationToken cancellationToken)
+    private async Task<ApiResponse<IReadOnlyList<ResponseData>>?> SearchSubtitleFromHtmlAsync(SubtitleSearchRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            // string year = request.ProductionYear?.ToString(CultureInfo.InvariantCulture) ?? DateTime.Now.Year.ToString(CultureInfo.InvariantCulture);
             return await OpenSubtitlesRequestHelper.Instance!.SearchSubtitleFromHtmlAsync(request, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -521,23 +511,6 @@ public class OpenSubtitleDownloader : ISubtitleProvider
 
     private ResponseData CreateSearchResponseFromHtml(string downloadLink, string subtitleName)
     {
-        /*
-        var responseData = new ResponseData
-        {
-            Data = new List<SubtitleData>
-            {
-                new SubtitleData
-                {
-                    Attributes = new SubtitleAttributes
-                    {
-                        Url = downloadLink,
-                        Name = subtitleName
-                    }
-                }
-            }
-        };
-        */
-
         var result = new ResponseData
         {
             Attributes = new Attributes

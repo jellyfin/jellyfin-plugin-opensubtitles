@@ -164,11 +164,44 @@ public class OpenSubtitlesRequestHelper
 
         if (match.Success)
         {
-            return null // (match.Groups["link"].Value, match.Groups["name"].Value);
+            var downloadLink = match.Groups["link"].Value;
+            var subtitleName = match.Groups["name"].Value;
+            var responseData = CreateResponseData(downloadLink, title);
+
+            var httpResponse = new HttpResponse { Code = System.Net.HttpStatusCode.OK, Body = string.Empty };
+            return new ApiResponse<IReadOnlyList<ResponseData>>(new List<ResponseData> { responseData }, httpResponse);
         }
 
-        return null;
+        return new ApiResponse<IReadOnlyList<ResponseData>>(new List<ResponseData>(), new HttpResponse { Code = System.Net.HttpStatusCode.OK, Body = string.Empty });
     }
 
-    
+    private static ResponseData CreateResponseData(string downloadLink, string subtitleName)
+    {
+        return new ResponseData
+        {
+            Attributes = new Attributes
+            {
+                Files = new List<SubFile>
+                {
+                    new SubFile
+                    {
+                        FileId = LoadIdFromLink(downloadLink)
+                    }
+                },
+                Release = subtitleName,
+                Uploader = new Uploader { Name = "Unknown" }
+            }
+        };
+    }
+
+    private static int LoadIdFromLink(string link)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(link, @"https://dl\.opensubtitles\.org/en/download/sub/(?<id>\d+)");
+        if (match.Success && int.TryParse(match.Groups["id"].Value, out var id))
+        {
+            return id;
+        }
+
+        throw new FormatException($"Unable to extract subtitle ID from link: {link}");
+    }
 }
