@@ -1,3 +1,5 @@
+using System.Net.Http;
+using System.Net;
 using System.Net.Http.Headers;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Plugins;
@@ -25,15 +27,16 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
                 System.Reflection.Assembly.GetExecutingAssembly().GetName().Version!.ToString()));
             c.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
         })
-        .ConfigurePrimaryHttpMessageHandler(c =>
+        .ConfigurePrimaryHttpMessageHandler(() =>
         {
-            // Base handler with automatic GZIP/Deflate decompression
-            var baseHandler = new HttpClientHandler
+            return new HttpClientHandler
             {
-                AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
             };
-            // Wrap your existing rate-limited handler around the base handler
-            return new ClientSideRateLimitedHandler(c.GetRequiredService<ILogger<ClientSideRateLimitedHandler>>(), baseHandler);
+        })
+        .AddHttpMessageHandler(sp =>
+        {
+            return new ClientSideRateLimitedHandler(sp.GetRequiredService<ILogger<ClientSideRateLimitedHandler>>());
         });
         serviceCollection.AddSingleton<ISubtitleProvider, OpenSubtitleDownloader>();
     }
