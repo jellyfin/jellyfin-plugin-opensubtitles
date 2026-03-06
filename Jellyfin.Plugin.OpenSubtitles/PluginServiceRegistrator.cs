@@ -22,22 +22,26 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
             c.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(
                 applicationHost.Name.Replace(' ', '_'),
                 applicationHost.ApplicationVersionString));
+
             c.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(
                 "Jellyfin-Plugin-OpenSubtitles",
                 System.Reflection.Assembly.GetExecutingAssembly().GetName().Version!.ToString()));
+
             c.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
         })
-        .ConfigurePrimaryHttpMessageHandler(() =>
+        .ConfigurePrimaryHttpMessageHandler(sp =>
         {
-            return new HttpClientHandler
+            var rateLimitHandler = new ClientSideRateLimitedHandler(
+                sp.GetRequiredService<ILogger<ClientSideRateLimitedHandler>>());
+
+            rateLimitHandler.InnerHandler = new HttpClientHandler
             {
                 AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
             };
-        })
-        .AddHttpMessageHandler(sp =>
-        {
-            return new ClientSideRateLimitedHandler(sp.GetRequiredService<ILogger<ClientSideRateLimitedHandler>>());
+
+            return rateLimitHandler;
         });
+
         serviceCollection.AddSingleton<ISubtitleProvider, OpenSubtitleDownloader>();
     }
 }
