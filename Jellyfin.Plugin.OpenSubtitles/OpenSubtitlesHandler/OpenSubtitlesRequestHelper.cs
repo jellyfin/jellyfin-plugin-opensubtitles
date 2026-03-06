@@ -119,11 +119,6 @@ public class OpenSubtitlesRequestHelper
     {
         string title = request.Name;
         string year = request.ProductionYear?.ToString(CultureInfo.InvariantCulture) ?? DateTime.Now.Year.ToString(CultureInfo.InvariantCulture);
-        // Use a handler that automatically decompresses GZIP/Deflate
-        // var handler = new HttpClientHandler
-        // {
-            // AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
-        // };
         using var client = _clientFactory.CreateClient(nameof(OpenSubtitles));
 
         string encodedTitle = Uri.EscapeDataString(title);
