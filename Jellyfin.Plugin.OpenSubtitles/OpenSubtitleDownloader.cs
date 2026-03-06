@@ -179,6 +179,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
                 return ProcessResults(subtitleResult.Data.ToList(), request, imdbId);
             }
         }
+        
         if (searchResponse.Ok && searchResponse.Data != null)
         {
             _logger.LogInformation("Search response is OK. Data is OK.");
