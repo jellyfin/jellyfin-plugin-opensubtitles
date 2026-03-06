@@ -43,12 +43,9 @@ public class OpenSubtitleDownloaderTests
     }
 
     [Fact]
-    public async Task Search_ReturnsEmpty_WhenRequestIsNull()
+    public async Task Search_ThrowsArgumentNullException_WhenRequestIsNull()
     {
-        var result = await _downloader.Search(null!, CancellationToken.None);
-        
-        Assert.NotNull(result);
-        Assert.Empty(result);
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _downloader.Search(null!, CancellationToken.None));
     }
 
     [Fact]

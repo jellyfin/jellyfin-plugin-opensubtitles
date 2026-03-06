@@ -71,11 +71,7 @@ public static class OpenSubtitlesApi
     /// <param name="user">The user information.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The subtitle download info.</returns>
-    public static async Task<ApiResponse<SubtitleDownloadInfo>> GetSubtitleLinkAsync(
-        int file,
-        string format,
-        LoginInfo user,
-        CancellationToken cancellationToken)
+    public static async Task<ApiResponse<SubtitleDownloadInfo>> GetSubtitleLinkAsync(int file, string format, LoginInfo user, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrEmpty(user.Token);
 
@@ -95,14 +91,7 @@ public static class OpenSubtitlesApi
     /// <returns>The Http response.</returns>
     public static async Task<HttpResponse> DownloadSubtitleAsync(string url, CancellationToken cancellationToken)
     {
-        return await RequestHandler.SendRequestAsync(
-            url,
-            HttpMethod.Get,
-            null,
-            [],
-            1,
-            cancellationToken,
-            true).ConfigureAwait(false);
+        return await RequestHandler.SendRequestAsync(url, HttpMethod.Get, null, [], 1, cancellationToken, true).ConfigureAwait(false);
     }
 
     /// <summary>
