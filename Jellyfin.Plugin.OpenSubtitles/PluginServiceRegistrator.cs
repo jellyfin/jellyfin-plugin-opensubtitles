@@ -31,12 +31,11 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
         })
         .ConfigurePrimaryHttpMessageHandler(sp =>
         {
-            var rateLimitHandler = new ClientSideRateLimitedHandler(
-                sp.GetRequiredService<ILogger<ClientSideRateLimitedHandler>>());
-
+            var rateLimitHandler = new ClientSideRateLimitedHandler(sp.GetRequiredService<ILogger<ClientSideRateLimitedHandler>>());
             rateLimitHandler.InnerHandler = new HttpClientHandler
             {
-                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+                AllowAutoRedirect = true
             };
 
             return rateLimitHandler;
