@@ -31,9 +31,8 @@ public class OpenSubtitlesRequestHelper
     /// </summary>
     /// <param name="logger">Log.</param>
     /// <param name="factory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
-    public OpenSubtitlesRequestHelper(ILogger<OpenSubtitlesRequestHelper> logger, IHttpClientFactory factory)
+    public OpenSubtitlesRequestHelper(IHttpClientFactory factory)
     {
-        _logger = logger;
         _clientFactory = factory;
     }
 
