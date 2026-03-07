@@ -14,6 +14,7 @@ using Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models;
 using Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler.Models.Responses;
 using MediaBrowser.Controller.Subtitles;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Net.Http.Headers;
 
 namespace Jellyfin.Plugin.OpenSubtitles.OpenSubtitlesHandler;
