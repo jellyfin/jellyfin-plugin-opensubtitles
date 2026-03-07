@@ -121,19 +121,27 @@ public class OpenSubtitlesRequestHelper
     public async Task<ApiResponse<IReadOnlyList<ResponseData>>> SearchSubtitleFromHtmlAsync(SubtitleSearchRequest request, Dictionary<string, string> options, CancellationToken cancellationToken)
     {
         string title = request.Name;
+        string encodedTitle = Uri.EscapeDataString(title);
         string year = request.ProductionYear?.ToString(CultureInfo.InvariantCulture) ?? DateTime.Now.Year.ToString(CultureInfo.InvariantCulture);
+
+        string language = options["languages"];
+        language = language.Replace("bg", "bul", StringComparison.OrdinalIgnoreCase);
+
         using var client = _clientFactory.CreateClient(nameof(OpenSubtitles));
 
-        string encodedTitle = Uri.EscapeDataString(title);
-        // string url = $@"https://www.opensubtitles.org/en/search2?MovieName={encodedTitle}&id=8&action=search&SubLanguageID={options["languages"]}&MovieYear={year}";
-        string url = $@"https://www.opensubtitles.org/en/search2/moviename-{encodedTitle}/sublanguageid-{options["languages"]}/movieyear-{year}";
+        string url = $@"https://www.opensubtitles.org/en/search2?MovieName={encodedTitle}&action=search&SubLanguageID={language}&MovieYear={year}";
+        // string url = $@"https://www.opensubtitles.org/en/search2/moviename-{encodedTitle}/sublanguageid-{options["languages"]}/movieyear-{year}";
+        // string url = $@"https://www.opensubtitles.org/en/search/imdbid-{options["imdb_id"]}/sublanguageid-{language}/moviename-{encodedTitle}";
 
         _logger?.LogInformation("Search URL: {Url}", url);
 
         var response = await client.GetAsync(url, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
-        var html = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
+        var finalUrl = response.RequestMessage?.RequestUri;
+        _logger?.LogInformation("Final URL after redirects: {FinalUrl}", finalUrl);
+
+        var html = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         _logger?.LogInformation("Search Html: {Html}", html);
 
         var pattern = @"<a itemprop=""url"" title=""Download"" href=""(?<link>https://dl\.opensubtitles\.org/en/download/sub/\d+)""><span itemprop=""name"">(?<name>[^<]+)</span></a>";
