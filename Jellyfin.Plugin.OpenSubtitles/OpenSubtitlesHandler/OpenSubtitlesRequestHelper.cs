@@ -127,17 +127,20 @@ public class OpenSubtitlesRequestHelper
         string encodedTitle = Uri.EscapeDataString(title);
         string url = $@"https://www.opensubtitles.org/en/search2?MovieName={encodedTitle}&id=8&action=search&SubLanguageID={options["languages"]}&MovieYear={year}";
 
-        _logger.LogInformation("Search URL: {Url}", url);
+        _logger?.LogInformation("Search URL: {Url}", url);
 
         var response = await client.GetAsync(url, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         var html = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+
+        _logger?.LogInformation("Search Html: {Html}", html);
 
         var pattern = @"<a itemprop=""url"" title=""Download"" href=""(?<link>https://dl\.opensubtitles\.org/en/download/sub/\d+)""><span itemprop=""name"">(?<name>[^<]+)</span></a>";
         var match = System.Text.RegularExpressions.Regex.Match(html, pattern);
 
         if (match.Success)
         {
+            _logger?.LogInformation("Success search.");
             var downloadLink = match.Groups["link"].Value;
             var subtitleName = match.Groups["name"].Value;
             var responseData = CreateResponseData(downloadLink, title);
@@ -146,6 +149,7 @@ public class OpenSubtitlesRequestHelper
             return new ApiResponse<IReadOnlyList<ResponseData>>(new List<ResponseData> { responseData }, httpResponse);
         }
 
+        _logger?.LogWarning("Empty response for single file search");
         return new ApiResponse<IReadOnlyList<ResponseData>>(new List<ResponseData>(), new HttpResponse { Code = System.Net.HttpStatusCode.OK, Body = string.Empty });
     }
 

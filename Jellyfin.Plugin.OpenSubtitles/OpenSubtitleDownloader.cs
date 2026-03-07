@@ -160,8 +160,10 @@ public class OpenSubtitleDownloader : ISubtitleProvider
             }
         }
 
-        _logger.LogDebug("Search query: {Query}", options);
         _logger.LogInformation("Search query: {Query}", options);
+        _logger.LogInformation("Search request MediaPath: {MediaPath}", request.MediaPath);
+        _logger.LogInformation("Search request SeriesName: {SeriesName}", request.SeriesName);
+        _logger.LogInformation("Search request Name: {Name}", request.Name);
 
         var searchResponse = await OpenSubtitlesApi.SearchSubtitlesAsync(options, cancellationToken).ConfigureAwait(false);
 
@@ -174,21 +176,21 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         {
             _logger.LogInformation("Search trying single file.");
             var subtitleResult = await SearchSubtitleFromHtmlAsync(request, options, cancellationToken).ConfigureAwait(false);
-            if (subtitleResult?.Ok && subtitleResult.Data != null && subtitleResult.Data.Any())
+            if (subtitleResult?.Ok == true && subtitleResult.Data != null && subtitleResult.Data.Any())
             {
                 _logger.LogInformation("Found subtitles.");
-                return ProcessResults(subtitleResult.Data.ToList(), request, imdbId);
+                return ProcessResults(subtitleResult!.Data!.ToList(), request, imdbId);
             }
         }
 
-        if (searchResponse.Ok && searchResponse.Data != null)
+        if (searchResponse.Ok && searchResponse.Data != null && searchResponse.Data.Any())
         {
             _logger.LogInformation("Search response is OK. Data is OK.");
             return ProcessResults(searchResponse.Data.ToList(), request, imdbId);
         }
         else
         {
-            _logger.LogInformation("Empty response.");
+            _logger.LogError("Empty response.");
             return Enumerable.Empty<RemoteSubtitleInfo>();
         }
     }
