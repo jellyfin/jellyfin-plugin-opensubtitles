@@ -174,7 +174,7 @@ public class OpenSubtitleDownloader : ISubtitleProvider
         {
             _logger.LogInformation("Search trying single file.");
             var subtitleResult = await SearchSubtitleFromHtmlAsync(request, options, cancellationToken).ConfigureAwait(false);
-            if (subtitleResult?.Ok && subtitleResult.Data != null && !subtitleResult.Data.Any())
+            if (subtitleResult?.Ok && subtitleResult.Data != null && subtitleResult.Data.Any())
             {
                 _logger.LogInformation("Found subtitles.");
                 return ProcessResults(subtitleResult.Data.ToList(), request, imdbId);
