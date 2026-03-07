@@ -127,7 +127,7 @@ public class OpenSubtitlesRequestHelper
         string encodedTitle = Uri.EscapeDataString(title);
         string url = $@"https://www.opensubtitles.org/en/search2?MovieName={encodedTitle}&id=8&action=search&SubLanguageID={options["languages"]}&MovieYear={year}";
 
-        _logger.LogInformation("Search url: {url}", url);
+        _logger.LogInformation("Search URL: {url}", url);
 
         var response = await client.GetAsync(url, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
