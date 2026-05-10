@@ -39,10 +39,15 @@ public class OpenSubtitlesRequestHelper
     /// </summary>
     /// <param name="input">The input stream.</param>
     /// <returns>The hash as Hexadecimal string.</returns>
-    public static string ComputeHash(Stream input)
+    public static string? ComputeHash(Stream input)
     {
         const int HashLength = 8; // 64 bit hash
         const long HashPos = 64 * 1024; // 64k
+
+        if (input.Length < HashPos)
+        {
+            return null;
+        }
 
         long streamsize = input.Length;
         ulong hash = (ulong)streamsize;

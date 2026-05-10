@@ -12,4 +12,12 @@ public class OpenSubtitlesRequestHelperTests
         using var str = File.OpenRead(Path.Join("Test Data", filename));
         Assert.Equal(hash, OpenSubtitlesRequestHelper.ComputeHash(str));
     }
+
+    [Theory]
+    [InlineData("small.mkv")]
+    public void ComputeHash_Small_File_Success(string filename)
+    {
+        using var str = File.OpenRead(Path.Join("Test Data", filename));
+        Assert.Null(OpenSubtitlesRequestHelper.ComputeHash(str));
+    }
 }
