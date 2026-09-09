@@ -113,6 +113,15 @@ public static class OpenSubtitlesApi
     /// <returns>The list of response data.</returns>
     public static async Task<ApiResponse<IReadOnlyList<ResponseData>>> SearchSubtitlesAsync(Dictionary<string, string> options, CancellationToken cancellationToken)
     {
+        // OpenSubtitles caps result offset at 1000 (documented API limit: "Pagination too
+        // deep. Maximum offset is 1000 results"). An ambiguous, title-only query (no imdb_id,
+        // e.g. an unidentified .strm item) can report far more pages than that, and walking
+        // every page up to TotalPages then requests an offset past the cap and gets a 400 on
+        // the very next page. Clamp to the highest page whose offset still respects the cap
+        // instead of trusting TotalPages: jellyfin/jellyfin-plugin-opensubtitles#219.
+        const int MaxOffset = 1000;
+        const int ResultsPerPage = 50; // OpenSubtitles' fixed, non-configurable page size.
+        const int MaxAllowedPage = MaxOffset / ResultsPerPage; // last page whose offset < MaxOffset.
         var max = -1;
         var current = 1;
 
@@ -144,7 +153,7 @@ public static class OpenSubtitlesApi
 
             if (max == -1)
             {
-                max = last.Data.TotalPages;
+                max = Math.Min(last.Data.TotalPages, MaxAllowedPage);
             }
 
             current = last.Data.Page + 1;
